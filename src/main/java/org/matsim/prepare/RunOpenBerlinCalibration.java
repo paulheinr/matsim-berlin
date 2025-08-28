@@ -13,7 +13,6 @@ import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.MATSimApplication;
 import org.matsim.application.options.SampleOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
-import org.matsim.application.prepare.freight.tripExtraction.ExtractRelevantFreightTrips;
 import org.matsim.application.prepare.network.CleanNetwork;
 import org.matsim.application.prepare.network.CreateNetworkFromSumo;
 import org.matsim.application.prepare.network.params.ApplyNetworkParams;
@@ -22,7 +21,6 @@ import org.matsim.application.prepare.pt.CreateTransitScheduleFromGtfs;
 import org.matsim.contrib.cadyts.car.CadytsCarModule;
 import org.matsim.contrib.cadyts.car.CadytsContext;
 import org.matsim.contrib.cadyts.general.CadytsScoring;
-import org.matsim.contrib.locationchoice.frozenepsilons.FrozenTastes;
 import org.matsim.contrib.locationchoice.frozenepsilons.FrozenTastesConfigGroup;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -89,7 +87,7 @@ import java.util.stream.Collectors;
 	MergePlans.class, SplitActivityTypesDuration.class, CleanPopulation.class, CleanAttributes.class,
 	GenerateSmallScaleCommercialTrafficDemand.class, CreateDataDistributionOfStructureData.class,
 	RunCountOptimization.class, SelectPlansFromIndex.class, ExtractPlanIndexFromType.class, AssignReferencePopulation.class,
-	ExtractRelevantFreightTrips.class, CheckCarAvailability.class, FixSubtourModes.class, ComputeTripChoices.class, ComputePlanChoices.class,
+	CheckCarAvailability.class, FixSubtourModes.class, ComputeTripChoices.class, ComputePlanChoices.class,
 	ApplyNetworkParams.class, SetCarAvailabilityByAge.class, CreateDrtVehicles.class
 })
 public class RunOpenBerlinCalibration extends MATSimApplication {
@@ -176,7 +174,7 @@ public class RunOpenBerlinCalibration extends MATSimApplication {
 			config.counts().setCountsScaleFactor(sampleSize * countScale);
 			config.plans().setInputFile(sample.adjustName(config.plans().getInputFile()));
 
-			sw.sampleSize = sampleSize * countScale;
+			sw.setSampleSize(sampleSize * countScale);
 		}
 
 		// Routes are not relaxed yet, and there should not be too heavy congestion
@@ -190,7 +188,7 @@ public class RunOpenBerlinCalibration extends MATSimApplication {
 			config.transit().setUseTransit(false);
 
 			// Disable dashboards, for all car runs, these take too many resources
-			sw.defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
+			sw.setDefaultDashboards(SimWrapperConfigGroup.Mode.disabled);
 		}
 
 		// Required for all calibration strategies
@@ -207,12 +205,6 @@ public class RunOpenBerlinCalibration extends MATSimApplication {
 			throw new IllegalArgumentException("Calibration mode [--mode} not set!");
 
 		if (mode == CalibrationMode.locationChoice) {
-
-			config.replanning().addStrategySettings(new ReplanningConfigGroup.StrategySettings()
-				.setStrategyName(FrozenTastes.LOCATION_CHOICE_PLAN_STRATEGY)
-				.setWeight(weight)
-				.setSubpopulation("person")
-			);
 
 			config.replanning().addStrategySettings(new ReplanningConfigGroup.StrategySettings()
 				.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute)
@@ -374,8 +366,6 @@ public class RunOpenBerlinCalibration extends MATSimApplication {
 	protected void prepareControler(Controler controler) {
 
 		if (mode == CalibrationMode.locationChoice) {
-			FrozenTastes.configure(controler);
-
 			controler.addOverridingModule(new AbstractModule() {
 				@Override
 				public void install() {

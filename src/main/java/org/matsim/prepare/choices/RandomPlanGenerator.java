@@ -2,12 +2,14 @@ package org.matsim.prepare.choices;
 
 import org.jetbrains.annotations.Nullable;
 import org.matsim.modechoice.CandidateGenerator;
-import org.matsim.modechoice.ModeEstimate;
 import org.matsim.modechoice.PlanCandidate;
 import org.matsim.modechoice.PlanModel;
 import org.matsim.modechoice.search.TopKChoicesGenerator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.SplittableRandom;
 
 /**
  * Generates random candidates.
@@ -32,22 +34,7 @@ public class RandomPlanGenerator implements CandidateGenerator {
 		// Chosen candidate from data
 		PlanCandidate existing = gen.generatePredefined(planModel, chosen).get(0);
 
-		// This changes the internal state to randomize the estimates
-		for (Map.Entry<String, List<ModeEstimate>> entry : planModel.getEstimates().entrySet()) {
-			for (ModeEstimate est : entry.getValue()) {
-				double[] utils = est.getEstimates();
-				if (utils != null)
-					for (int i = 0; i < utils.length; i++) {
-						utils[i] = -rnd.nextDouble();
-					}
-			}
-		}
-
-		List<PlanCandidate> result = new ArrayList<>();
-		result.add(existing);
-		result.addAll(gen.generate(planModel, consideredModes, mask));
-
-		return result.stream().distinct().limit(topK).toList();
+		throw new UnsupportedOperationException("Code removed due to API changes.");
 	}
 
 }

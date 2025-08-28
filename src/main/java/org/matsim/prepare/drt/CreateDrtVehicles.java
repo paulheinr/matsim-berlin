@@ -34,7 +34,6 @@ import org.matsim.application.options.CrsOptions;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicleSpecification;
-import org.matsim.contrib.dvrp.fleet.FleetWriter;
 import org.matsim.contrib.dvrp.fleet.ImmutableDvrpVehicleSpecification;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.scenario.ProjectionUtils;
@@ -135,7 +134,9 @@ public class CreateDrtVehicles implements MATSimAppCommand {
 
 		}
 		String fileNameBase = output + "drt-by-rndLocations-%dvehicles-%dseats".formatted(amount, seats);
-		new FleetWriter(vehicles.stream()).write(fileNameBase + ".xml.gz");
+
+		if (true)
+			throw new UnsupportedOperationException("FleetWriter is no longer supported. Use VehicleWriterV1 instead.");
 
 		writeVehStartPositionsCSV(network, vehicles, fileNameBase);
 
