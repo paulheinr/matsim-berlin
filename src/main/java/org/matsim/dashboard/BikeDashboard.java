@@ -13,6 +13,8 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import static java.util.Map.*;
+
 
 /**
  * Dashboard for analyzing bike-related data in MATSim scenarios.
@@ -49,9 +51,10 @@ public class BikeDashboard implements Dashboard {
 			viz.height = 12d;
 			viz.addDataset("psafeUrbanLinksBerlin_v1.shp", "../shp/psafeUrbanLinksBerlin_v1.shp");
 			viz.display.lineColor.dataset = "psafeUrbanLinksBerlin_v1.shp";
-			viz.display.lineColor.columnName = "LatPsafeeb";
-			viz.display.lineWidth.columnName = "LatPsafeeb";
-			viz.display.lineColor.setColorRamp(ColorScheme.Viridis,  5, true);
+			viz.display.lineColor.columnName = "LevPsafeeb";
+			viz.display.lineWidth.columnName = "LevPsafeeb";
+			viz.display.lineColor.setColorRamp(ColorScheme.Viridis,  6, true, "2=red,3=orange,4=yellow,5=green,6=blue");
+
 		});
 
 		layout.row("bike-volumes").el(MapPlot.class, (viz, data) -> {
@@ -59,9 +62,13 @@ public class BikeDashboard implements Dashboard {
 			viz.center = data.context().getCenter();
 			viz.zoom = data.context().mapZoomLevel;
 			viz.setShape("../dataBikeVolumes/testWitheNewCoord.shp");
+			viz.width = 16d;
+			viz.height = 12d;
 			viz.addDataset("testWitheNewCoord.shp", "../dataBikeVolumes/testWitheNewCoord.shp");
 			viz.display.lineColor.dataset = "testWitheNewCoord.shp";
-			viz.display.lineWidth.columnName="dtvw_rad";
+			viz.display.lineWidth.dataset = "testWitheNewCoord.shp";
+			viz.display.lineWidth.columnName="strklasse1";
+			viz.display.lineWidth.scaleFactor = 500.;
 			viz.display.lineColor.columnName = "dtvw_rad";
 			viz.display.lineColor.setColorRamp(ColorScheme.Viridis,  5, true);
 		});
@@ -72,10 +79,10 @@ public class BikeDashboard implements Dashboard {
 			viz.zoom = data.context().mapZoomLevel;
 			viz.setShape("../simra/Berlin-incidents.json");
 			viz.height = 12d;
-
 			viz.addDataset("Berlin-incidents.json", "../simra/Berlin-incidents.json");
-			viz.display.fill.columnName = "bikeType";
-			viz.display.fill.setColorRamp(ColorScheme.Viridis,  5, true);
+			viz.display.fill.dataset = "Berlin-incidents.json";
+			viz.display.fill.columnName = "scary";
+			viz.display.fill.setColorRamp(ColorScheme.Viridis,  2, true);
 			//viz.display.lineColor.setColorRamp(ColorScheme.Viridis,  5, true);
 		});
 
