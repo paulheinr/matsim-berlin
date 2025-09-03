@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.optimizer.insertion.parallel.ParallelRequestInserterModule;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.run.DrtConfigs;
 import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
@@ -112,6 +113,15 @@ public final class RunDrtOpenBerlinScenario {
 		// yyyy there is fareSModule (with S) in config. ?!?!  kai, jul'19
 		controler.addOverridingModule(new IntermodalTripFareCompensatorsModule());
 		controler.addOverridingModule(new PtIntermodalRoutingModesModule());
+
+
+		for (DrtConfigGroup drtConfig : MultiModeDrtConfigGroup.get(controler.getConfig()).getModalElements()) {
+			if (drtConfig.getDrtParallelInserterParams().isPresent()) {
+				log.info("Activating parallel drt request inserter for {}", drtConfig.getMode());
+				controler.addOverridingQSimModule(new ParallelRequestInserterModule(drtConfig));
+			}
+		}
+
 
 		return controler;
 	}
