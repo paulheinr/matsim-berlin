@@ -9,6 +9,17 @@
 	<module name="multiModeDrt">
 		<parameterset type="drt">
 			<parameterset type="ExtensiveInsertionSearch"/>
+
+			<parameterset type="parallelInserter" >
+				<param name="collectionPeriod" value="15.0" />
+				<param name="insertionSearchThreadsPerWorker" value="4" />
+				<param name="logThreadActivity" value="false" />
+				<param name="maxIterations" value="2" />
+				<param name="maxPartitions" value="4" />
+				<param name="requestsPartitioner" value="LoadAwareRoundRobinRequestsPartitioner" />
+				<param name="vehiclesPartitioner" value="ShiftingRoundRobinVehicleEntryPartitioner" />
+			</parameterset>
+
 			<!-- If true, the startLink is changed to last link in the current schedule, so the taxi starts the next day at the link where it stopped operating the day before. False by default. -->
 			<param name="changeStartLinkToLastLinkInSchedule" value="true" />
 			<!-- allows to configure a service area per drt mode.Used with serviceArea Operational Scheme -->
