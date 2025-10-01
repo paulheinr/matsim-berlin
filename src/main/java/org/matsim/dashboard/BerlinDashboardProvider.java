@@ -31,9 +31,13 @@ public class BerlinDashboardProvider implements DashboardProvider {
 			.context("gartenfeld")
 			.title("Gartenfeld");
 
+		Dashboard energyConsumption = Dashboard.customize(new EnergyConsumptionDashboard())
+				.context("gartenfeld");
+
 		return List.of(
 			trips,
 			gartenfeld,
+			energyConsumption,
 			new TravelTimeComparisonDashboard(ApplicationUtils.resolve(config.getContext(), "berlin-v" + OpenBerlinScenario.VERSION + "-routes-ref.csv.gz")),
 			new EmissionsDashboard(config.global().getCoordinateSystem()),
 			new NoiseDashboard(config.global().getCoordinateSystem()),
