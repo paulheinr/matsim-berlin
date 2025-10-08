@@ -46,7 +46,7 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 	private double unemployed;
 
 	@CommandLine.Option(names = "--gender-dist", description = "Proportion of women", defaultValue = "0.5")
-	private double genderDist;
+	private double sexDist;
 
 	@CommandLine.Option(names = "--output", description = "Path to output population", required = true)
 	private Path output;
@@ -82,12 +82,15 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 
 	private void generatePersons() {
 
+//		shares of young and old people. Those are the "borders" of the distr. the rest of the agents has an age between young and old.
+//		however, it is unclear what young and old exactly mean. TODO
 		double young = ageDist.get(0);
 		double old = ageDist.get(1);
 
-		// x women for 100 men
-		double quota = genderDist;
+		// x women for 100 men. In german this is biologisches Geschlecht. it is NOT the same as gender. sex != gender!
+		double quota = sexDist;
 
+//		create distributions for each attr.
 		var sex = new EnumeratedAttributeDistribution<>(Map.of("f", quota, "m", 1 - quota));
 		var employment = new EnumeratedAttributeDistribution<>(Map.of(true, 1 - unemployed, false, unemployed));
 		var ageGroup = new EnumeratedAttributeDistribution<>(Map.of(
@@ -97,14 +100,18 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 		));
 
 		PopulationFactory f = population.getFactory();
+//		get a geometry which contains all facility coords. convex = any connection line of 2 coords in the shp is entirely surrounded by the shp.
 		Geometry geom = facilities.getGeometry().convexHull();
 
 		var youngDist = new UniformAttributeDistribution<>(IntStream.range(1, 18).boxed().toList());
 		var middleDist = new UniformAttributeDistribution<>(IntStream.range(18, 65).boxed().toList());
 		var oldDist = new UniformAttributeDistribution<>(IntStream.range(65, 100).boxed().toList());
 
+//		iterate to create n persons. dependent on sample size.
 		for (int i = 0; i < n * sample; i++) {
 
+//			generate unique person.
+//			TODO: continue here
 			Person person = f.createPerson(CreateBerlinPopulation.generateId(population, prefix, rnd));
 			PersonUtils.setSex(person, sex.sample());
 			PopulationUtils.putSubpopulation(person, "person");

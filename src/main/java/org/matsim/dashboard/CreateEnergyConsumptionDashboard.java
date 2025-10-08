@@ -25,6 +25,7 @@ import java.util.List;
         description = "Run analysis and create SimWrapper dashboard for existing run output."
 )
 public class CreateEnergyConsumptionDashboard implements MATSimAppCommand {
+//	TODO: rather change this class to a general GartenfeldSimwrapperRunner.
 
     private static final Logger log = LogManager.getLogger(CreateEnergyConsumptionDashboard.class);
     @CommandLine.Mixin

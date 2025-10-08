@@ -15,11 +15,18 @@ import java.nio.file.Path;
  */
 public final class CreateGartenfeldComplete {
 
+//	private access only
 	private CreateGartenfeldComplete() {
 	}
 
 	public static void main(String[] args) {
 
+//		TODO: re-strucutre this class:
+//		1) remove hard-coded usage of paths. mb change to MATSimAppCommand and define necessary paths as run params.
+//		2) I am pretty sure that we should not have all the .xml / .gpkg files on github. That's what we have a svn structure for.
+
+//		create gartenfeld population based on provided full population.
+//		I have not yet fully understood how that is done. TODO
 		String fullPopulation = "input/gartenfeld/gartenfeld-v6.4.population-full-10pct.xml.gz";
 		if (!Files.exists(Path.of(fullPopulation))) {
 			new CreateGartenfeldPopulation().execute(
@@ -32,6 +39,7 @@ public final class CreateGartenfeldComplete {
 		String fullNetwork = "input/gartenfeld/gartenfeld-v6.4.network.xml.gz";
 		String berlinNetwork = "input/v%s/berlin-v%s-network-with-pt.xml.gz".formatted(OpenBerlinScenario.VERSION, OpenBerlinScenario.VERSION);
 
+//		create "the" cutout for gartenfeld. I am currently (2025-08-10) not sure what that means exactly. TODO
 		new CreateScenarioCutOut().execute(
 				"--network", berlinNetwork,
 				"--population", fullPopulation,
@@ -49,9 +57,12 @@ public final class CreateGartenfeldComplete {
 				"--output-network-change-events", "input/gartenfeld/gartenfeld-v6.4.network-change-events.xml.gz"
 		);
 
+//		call ModifyNetwork class. The class removes links from the network based on a provided csv/txt file.
+//		It also adds links to the network based on a provided shp file with line geometries.
 		createNetwork(network, network, "input/gartenfeld/DNG_network.gpkg");
 		createNetwork(berlinNetwork, fullNetwork, "input/gartenfeld/DNG_network.gpkg");
 
+//		check the plans of agents for non-existing linkIds. Invalid linkIds will be removed.
 		new PersonNetworkLinkCheck().execute(
 				"--input", population,
 				"--network", network,
@@ -64,6 +75,7 @@ public final class CreateGartenfeldComplete {
 				"--output", fullPopulation
 		);
 
+//		sample input 10% sample to 1%.
 		new DownSamplePopulation().execute(
 				population,
 				"--sample-size", "0.1",

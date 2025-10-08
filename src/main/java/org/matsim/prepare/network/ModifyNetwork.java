@@ -61,14 +61,19 @@ public class ModifyNetwork implements MATSimAppCommand {
 
 		network = NetworkUtils.readNetwork(networkPath);
 
+//		remove links of provided csv file from network.
+//		The method also checks if the resulting network has nodes without connections and if so deletes them.
 		if (removeCSV != null) {
 			removeLinks(network);
 		}
 
+//		add links to network based on provided shp file with line geometries.
+//		Tries to find the nearest toNode/FromNode for each provided line geom.
 		if (shp.isDefined()) {
 			addLinksFromShape();
 		}
 
+//		TODO: change to NetworkUtils.cleanNetwork
 		MultimodalNetworkCleaner cleaner = new MultimodalNetworkCleaner(network);
 
 		cleaner.run(Set.of(TransportMode.car));
@@ -92,7 +97,7 @@ public class ModifyNetwork implements MATSimAppCommand {
 			removed++;
 		}
 
-		// Remove links that are not connected
+		// Remove nodes that are not connected
 		List<Id<Node>> toRemove = network.getNodes().values().stream().filter(n -> n.getInLinks().isEmpty() && n.getOutLinks().isEmpty())
 			.map(Node::getId)
 			.toList();

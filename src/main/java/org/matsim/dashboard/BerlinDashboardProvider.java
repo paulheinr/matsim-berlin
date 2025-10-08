@@ -43,6 +43,7 @@ public class BerlinDashboardProvider implements DashboardProvider {
 			new NoiseDashboard(config.global().getCoordinateSystem()),
 			new TrafficCountsDashboard()
 				.withModes(TransportMode.car, Set.of(TransportMode.car))
+//				TODO: is truck the correct mode here?
 				.withModes(TransportMode.truck, Set.of(TransportMode.truck, "freight"))
 		);
 	}

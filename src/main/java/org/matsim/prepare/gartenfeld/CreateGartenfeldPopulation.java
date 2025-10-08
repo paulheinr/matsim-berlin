@@ -11,6 +11,8 @@ import picocli.CommandLine;
 @CommandLine.Command(name = "create-gartenfeld-population", description = "Create the population for the Gartenfeld scenario.")
 public class CreateGartenfeldPopulation implements MATSimAppCommand {
 
+//	on the first view this class replicates the structure of a scenario creation makefile.
+
 	private static final String SVN = "../shared-svn/projects/matsim-germany";
 	private static final String SRV = "../shared-svn/projects/matsim-berlin/data/SrV/converted";
 
@@ -25,6 +27,7 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 	@SuppressWarnings("MultipleStringLiteralsExtended")
 	public Integer call() throws Exception {
 
+//		TODO: where do the following values come from???
 		new CreateFixedPopulation().execute(
 			"--n", "7400",
 			"--sample", "0.1",
