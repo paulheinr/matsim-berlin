@@ -68,10 +68,13 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 		rnd = new SplittableRandom(0);
 		population = PopulationUtils.createPopulation(ConfigUtils.createConfig());
 
+//		this creates persons and samples person attrs from distribution.
+//		an empty plan (except for the first home act) is created and selected for each person based on the sampled home coord.
 		generatePersons();
 
 		log.info("Generated {} persons", population.getPersons().size());
 
+//		sort population by personId. Why is this necessary??? TODO
 		PopulationUtils.sortPersons(population);
 
 		ProjectionUtils.putCRS(population, OpenBerlinScenario.CRS);
@@ -83,7 +86,8 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 	private void generatePersons() {
 
 //		shares of young and old people. Those are the "borders" of the distr. the rest of the agents has an age between young and old.
-//		however, it is unclear what young and old exactly mean. TODO
+//		however, it is unclear what young and old exactly mean.
+//		update: after reading the below code: young 1-18, middle 18-65, old 65+
 		double young = ageDist.get(0);
 		double old = ageDist.get(1);
 
@@ -111,13 +115,14 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 		for (int i = 0; i < n * sample; i++) {
 
 //			generate unique person.
-//			TODO: continue here
 			Person person = f.createPerson(CreateBerlinPopulation.generateId(population, prefix, rnd));
 			PersonUtils.setSex(person, sex.sample());
 			PopulationUtils.putSubpopulation(person, "person");
 
+//			sample age group from age group distr
 			AgeGroup group = ageGroup.sample();
 
+//			sample age from single age group distr
 			if (group == AgeGroup.MIDDLE) {
 				PersonUtils.setAge(person, middleDist.sample());
 				PersonUtils.setEmployed(person, employment.sample());
@@ -129,16 +134,20 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 				PersonUtils.setEmployed(person, false);
 			}
 
+//			sample home location from geometry which is created based on input facilities (for gartenfeld)
 			Coord coord = CreateBerlinPopulation.sampleHomeCoordinate(geom, OpenBerlinScenario.CRS, facilities, rnd, 1500);
 
 			person.getAttributes().putAttribute(Attributes.HOME_X, coord.getX());
 			person.getAttributes().putAttribute(Attributes.HOME_Y, coord.getY());
 
 			// Currently hard-coded as berlin inhabitants
+//			the below attrs gem = gemeinde probably seem to resemble "berlin"
+//			ars???
 			person.getAttributes().putAttribute(Attributes.GEM, 11000000);
 			person.getAttributes().putAttribute(Attributes.ARS, 110000000000L);
 			person.getAttributes().putAttribute(Attributes.RegioStaR7, 1);
 
+//			create empty plan and add home act based on above sampled home coord.
 			Plan plan = f.createPlan();
 			plan.addActivity(f.createActivityFromCoord("home", coord));
 

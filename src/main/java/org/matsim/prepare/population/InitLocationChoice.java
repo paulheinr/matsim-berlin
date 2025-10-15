@@ -139,6 +139,7 @@ public class InitLocationChoice implements MATSimAppCommand, PersonAlgorithm {
 			return 2;
 		}
 
+//		filter network for car only network
 		Network completeNetwork = NetworkUtils.readNetwork(networkPath.toString());
 		TransportModeNetworkFilter filter = new TransportModeNetworkFilter(completeNetwork);
 		network = NetworkUtils.createNetwork();
@@ -146,6 +147,7 @@ public class InitLocationChoice implements MATSimAppCommand, PersonAlgorithm {
 
 		facilities = new FacilityIndex(facilityPath.toString(), OpenBerlinScenario.CRS);
 
+//		get zones from germany wide shp
 		zones = new Long2ObjectOpenHashMap<>(shp.readFeatures().stream()
 			.collect(Collectors.toMap(ft -> Long.parseLong((String) ft.getAttribute("ARS")), ft -> ft)));
 
@@ -212,6 +214,7 @@ public class InitLocationChoice implements MATSimAppCommand, PersonAlgorithm {
 		}
 
 		// Activities that only occur on one place per person
+//		those are basically work places and "edu" places.
 		Map<String, ActivityFacility> fixedLocations = new HashMap<>();
 
 		int planNumber = 0;
@@ -241,6 +244,8 @@ public class InitLocationChoice implements MATSimAppCommand, PersonAlgorithm {
 					// Distance will be reduced
 					double dist = beelineDist(origDist);
 
+//					get location from fixedLocation list if applicable.
+//					so: work or edu because those act types typically are at the same location each day.
 					if (fixedLocations.containsKey(type)) {
 						location = fixedLocations.get(type);
 					}
