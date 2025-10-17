@@ -71,7 +71,6 @@ public class ZeroEmissionsZoneScenario extends OpenBerlinScenario{
         List<String> modeChoiceModes = new ArrayList<>(List.of(config.subtourModeChoice().getModes()));
         modeChoiceModes.add(ELECTRIC_CAR);
         modeChoiceModes.add(ELECTRIC_RIDE);
-        modeChoiceModes.add(ELECTRIC_TRUCK);
         config.subtourModeChoice().setModes(modeChoiceModes.toArray(new String[0]));
 
         //add electric modes to the QSim main modes
