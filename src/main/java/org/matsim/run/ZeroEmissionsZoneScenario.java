@@ -52,6 +52,18 @@ public class ZeroEmissionsZoneScenario extends OpenBerlinScenario{
             description = "Can be one of [nowhere, motorway, motorwayAndPrimaryAndTrunk]. Determines the type of roads inside in the ban area, where combustion engine vehicles are allowed to drive.")
     private static CEVAllowedOnRoadTypesInsideBanArea ROAD_TYPES_CAR_ALLOWED;
 
+    @CommandLine.Option(names = "--ev-cost-constant-factor",
+            defaultValue = "1.5",
+            description = "Multiplier for the daily monetary constant of electric vehicle modes compared to their combustion engine counterparts.")
+    private static double EV_COST_CONSTANT_FACTOR;
+
+    @CommandLine.Option(names = "--ev-cost-distance-factor",
+            defaultValue = "0.8",
+            description = "Multiplier for the monetary distance rate of electric vehicle modes compared to their combustion engine counterparts.")
+    private static double EV_COST_DISTANCE_FACTOR;
+
+
+
     private enum CEVAllowedOnRoadTypesInsideBanArea {
         nowhere, motorway, motorwayAndPrimaryAndTrunk
     }
@@ -93,16 +105,16 @@ public class ZeroEmissionsZoneScenario extends OpenBerlinScenario{
         ScoringConfigGroup.ModeParams carParams = config.scoring().getModes().get(TransportMode.car);
         //copy all scoring params from car
         copyModeParams(carParams, electricCarParams);
-        electricCarParams.setDailyMonetaryConstant(carParams.getConstant() * 1.5); //TODO adjust parametrization
-        electricCarParams.setMonetaryDistanceRate(carParams.getMonetaryDistanceRate() * 0.8); //TODO adjust parametrization
+        electricCarParams.setDailyMonetaryConstant(carParams.getDailyMonetaryConstant() * EV_COST_CONSTANT_FACTOR); //TODO adjust parametrization
+        electricCarParams.setMonetaryDistanceRate(carParams.getMonetaryDistanceRate() * EV_COST_DISTANCE_FACTOR); //TODO adjust parametrization
         config.scoring().addModeParams(electricCarParams);
 
         ScoringConfigGroup.ModeParams electricRideParams = new ScoringConfigGroup.ModeParams(ELECTRIC_RIDE);
         ScoringConfigGroup.ModeParams rideParams = config.scoring().getModes().get(TransportMode.ride);
         //copy all scoring params from ride
         copyModeParams(rideParams, electricRideParams);
-        electricRideParams.setDailyMonetaryConstant(rideParams.getConstant() * 1.5); //TODO adjust parametrization
-        electricRideParams.setMonetaryDistanceRate(rideParams.getMonetaryDistanceRate() * 0.8); //TODO adjust parametrization
+        electricRideParams.setDailyMonetaryConstant(rideParams.getDailyMonetaryConstant() * EV_COST_CONSTANT_FACTOR); //TODO adjust parametrization
+        electricRideParams.setMonetaryDistanceRate(rideParams.getMonetaryDistanceRate() * EV_COST_DISTANCE_FACTOR); //TODO adjust parametrization
         config.scoring().addModeParams(electricRideParams);
 
         ScoringConfigGroup.ModeParams electricTruckParams = new ScoringConfigGroup.ModeParams(ELECTRIC_TRUCK);
