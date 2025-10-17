@@ -1,4 +1,4 @@
-package org.matsim.run;
+package org.matsim.run.policies;
 
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -21,6 +21,7 @@ import org.matsim.core.population.PopulationUtils;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.core.utils.io.IOUtils;
+import org.matsim.run.OpenBerlinScenario;
 import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
@@ -34,7 +35,7 @@ import java.util.stream.Collectors;
  * This scenario class extends the OpenBerlinScenario by the functionality to create a zero-emissions-zone,
  * meaning that combustion engine vehicles (cev) are forbidden to enter and drive.
  */
-public class ZeroEmissionsZoneScenario extends OpenBerlinScenario{
+public class ZeroEmissionsZoneScenario extends OpenBerlinScenario {
 
     public static final String ELECTRIC_CAR = "electric_car";
     public static final String ELECTRIC_TRUCK = "electric_truck";
