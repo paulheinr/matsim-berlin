@@ -18,6 +18,7 @@ import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.core.utils.io.IOUtils;
@@ -205,6 +206,14 @@ public class ZeroEmissionsZoneScenario extends OpenBerlinScenario {
         super.prepareControler(controler);
 
         controler.addOverridingModule(new ElectricTravelTimeBinding());
+
+        //we need to override the PermissibleModesCalculator to account for electric vehicles
+        controler.addOverridingModule(new AbstractModule() {
+            @Override
+            public void install() {
+                bind(PermissibleModesCalculator.class).to(ZEZPermissibleModesCalculator.class);
+            }
+        });
     }
 
     private static void addElectricVehiclesToNetwork(Scenario scenario) {
