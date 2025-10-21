@@ -1,6 +1,5 @@
 package org.matsim.run.gartenfeld;
 
-import org.jetbrains.annotations.Nullable;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -12,6 +11,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.population.algorithms.ParallelPersonAlgorithmUtils;
 import org.matsim.core.router.MultimodalLinkChooser;
@@ -25,8 +25,8 @@ import java.util.Set;
 /**
  * Scenario class for Gartenfeld.
  * <p>
- * This scenario has its own files, which extend the OpenBerlin scenario files with inhabitants and road infrastructure specific to Gartenfeld.
- * See {@link org.matsim.prepare.gartenfeld.CreateGartenfeldComplete} for the creation of these files.
+ * This scenario has its own input files, which extend the OpenBerlin scenario files with inhabitants and road infrastructure specific to Gartenfeld.
+ * See {@link org.matsim.prepare.gartenfeld.CreateGartenfeldComplete} for the creation of these input files.
  */
 public class GartenfeldScenario extends OpenBerlinScenario {
 
@@ -36,8 +36,9 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 	@CommandLine.Option(names = "--gartenfeld-shp", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/DNG_area.gpkg")
 	private String gartenFeldArea;
 
-	@CommandLine.Option(names = "--parking-garages", description = "Enable parking garages.", defaultValue = "NO_GARAGE")
-	private GarageType garageType = GarageType.NO_GARAGE;
+	@CommandLine.Option(names = "--parking-garages", description = "Enable parking garages. Possible values CAR_PARKING_ALLOWED_ON_ALL_LINKS or CAR_PARKING_IN_CENTRAL_GARAGE",
+		defaultValue = "CAR_PARKING_ALLOWED_ON_ALL_LINKS")
+	private GarageType garageType = GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS;
 
 		public static void main(String[] args) {
 		MATSimApplication.run(GartenfeldScenario.class, args);
@@ -48,7 +49,10 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		// Load the Gartenfeld specific part into the standard Berlin config
 		ConfigUtils.loadConfig(config, gartenFeldConfig);
 
-		// needs to be after load.config
+		// needs to be called after load.config
+//		apply all changes of super class/method: add simwrapper cfg, add scaling factor where applicable,
+//		set correct ride mode params (dependent on car), add replanning strategies for each subpop,
+//		add cfg group for bicycle module, configure emissions
 		super.prepareConfig(config);
 
 		return config;
@@ -56,22 +60,26 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 
 	protected void prepareScenario(Scenario scenario) {
 
+//		apply all changes of super class/method:
+//		add hbefa link attributes
 		super.prepareScenario(scenario);
 
 		Network network = scenario.getNetwork();
 		Set<String> removeModes = Set.of(TransportMode.car, TransportMode.truck, "freight", TransportMode.ride);
 
-		if (garageType != GarageType.NO_GARAGE) {
+//		if we want to run the scenario with a central DNG parking garage, we have to remove car etc. from all DNG links
+		if (garageType != GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS) {
 
 			for (Link link : network.getLinks().values()) {
-
 				// Make all links car free
 				String linkId = link.getId().toString();
 
+//				if gartenfeld link, do removal of allowed modes
 				if (linkId.startsWith("network-DNG")) {
 
 					// First garage, a garage in any cases
-					if (linkId.equals("network-DNG.1") || linkId.equals("network-DNG.1_r"))
+//					The following 2 links are the central parking garage
+					if (linkId.equals(GartenfeldLinkChooser.accessLink.toString()) || linkId.equals(GartenfeldLinkChooser.egressLink.toString()))
 						continue;
 
 					Set<String> allowedModes = new HashSet<>(link.getAllowedModes());
@@ -80,8 +88,8 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 				}
 			}
 
-			MultimodalNetworkCleaner cleaner = new MultimodalNetworkCleaner(network);
-			removeModes.forEach(m -> cleaner.run(Set.of(m)));
+//			TODO: shouldn't we run the cleaner only when network has been changed? We dont need to clean if  not garageType != GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS
+			NetworkUtils.cleanNetwork(network, removeModes);
 
 			// Clean link ids that are not valid anymore
 			ParallelPersonAlgorithmUtils.run(
@@ -95,10 +103,12 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 
 	protected void prepareControler(Controler controler) {
 
+//		apply all changes of super class/method:
+//		add modules for simwrapper, ttbinding, qsimtiming, matsim-berlin-specific advanced scoring
 		super.prepareControler(controler);
 
 		// Only with the car free area, the multimodal link chooser is needed
-		if (garageType == GarageType.ONE_LINK)
+		if (garageType == GarageType.CAR_PARKING_IN_CENTRAL_GARAGE)
 			controler.addOverridingModule(new AbstractModule() {
 				@Override
 				public void install() {
@@ -115,10 +125,10 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		/**
 		 * No garage, cars are allowed on all links.
 		 */
-		NO_GARAGE,
+		CAR_PARKING_ALLOWED_ON_ALL_LINKS,
 		/**
 		 * One garage, cars are only allowed on the garage link at the entrance of the area.
 		 */
-		ONE_LINK
+		CAR_PARKING_IN_CENTRAL_GARAGE
 	}
 }

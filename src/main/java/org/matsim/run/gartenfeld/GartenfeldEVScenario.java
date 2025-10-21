@@ -42,19 +42,22 @@ import java.util.stream.Collectors;
 
 /**
  * Scenario class for Gartenfeld with electric vehicles, extending the {@link GartenfeldScenario}.
+ *
+ * @deprecated We do not want to use EV contrib at the moment. Hence, this is class is deprecated.
  */
+@Deprecated
 public class GartenfeldEVScenario extends GartenfeldScenario {
 
 	private static final Logger log = LogManager.getLogger(GartenfeldEVScenario.class);
 
-	//normally i would like to put the https URL here, but it isn't possible to have MATSim application load a config from a URL, atm.
+	//normally I would like to put the https URL here, but it isn't possible to have MATSim application load a config from a URL, atm.
 //    private static final String SVN_OUPTUT_DIRECTORY = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/gartenfeld/output/gartenfeld-v6.4-1pct/";
-	private static final String SVN_OUPTUT_DIRECTORY = "D:/public-svn/matsim/scenarios/countries/de/gartenfeld/output/gartenfeld-v6.4-1pct/";
+	private static final String SVN_OUTPUT_DIRECTORY = "D:/public-svn/matsim/scenarios/countries/de/gartenfeld/output/gartenfeld-v6.4-1pct/";
 
 	public static void main(String[] args) {
 		runWithDefaults(GartenfeldEVScenario.class, args,
 			"--parking-garages", "NO_GARAGE",
-			"--config", SVN_OUPTUT_DIRECTORY + "gartenfeld-v6.4-1pct.output_config.xml",
+			"--config", SVN_OUTPUT_DIRECTORY + "gartenfeld-v6.4-1pct.output_config.xml",
 			"--config:network.inputChangeEventsFile", "gartenfeld-v6.4-1pct.output_change_events.xml.gz",
 			"--config:facilities.inputFacilitiesFile", "gartenfeld-v6.4-1pct.output_facilities.xml.gz",
 			"--config:controller.runId", "gartenfeld-v6.4.1pct-EV",

@@ -42,6 +42,11 @@ public class OpenBerlinScenario extends MATSimApplication {
 
 	public static final String VERSION = "6.4";
 	public static final String CRS = "EPSG:25832";
+	public static final String SUBPOP_PERSON = "person";
+	public static final String SUBPOP_FREIGHT = "freight";
+	public static final String SUBPOP_GOODS = "goodsTraffic";
+	public static final String SUBPOP_COM_PERSON = "commercialPersonTraffic";
+	public static final String SUBPOP_COM_PERSON_SERVICE = "commercialPersonTraffic_service";
 
 	//	To decrypt hbefa input files set MATSIM_DECRYPTION_PASSWORD as environment variable. ask VSP for access.
 	private static final String HBEFA_2020_PATH = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/";
@@ -96,8 +101,9 @@ public class OpenBerlinScenario extends MATSimApplication {
 		RideScoringParamsFromCarParams.setRideScoringParamsBasedOnCarParams(config.scoring(), 1.0);
 		Activities.addScoringParams(config, true);
 
+//		add all necessary replanning strategies for all subpops
 		// Required for all calibration strategies
-		for (String subpopulation : List.of("person", "freight", "goodsTraffic", "commercialPersonTraffic", "commercialPersonTraffic_service")) {
+		for (String subpopulation : List.of(SUBPOP_PERSON, SUBPOP_FREIGHT, SUBPOP_GOODS, SUBPOP_COM_PERSON, SUBPOP_COM_PERSON_SERVICE)) {
 			config.replanning().addStrategySettings(
 				new ReplanningConfigGroup.StrategySettings()
 					.setStrategyName(planSelector)
@@ -117,14 +123,14 @@ public class OpenBerlinScenario extends MATSimApplication {
 			new ReplanningConfigGroup.StrategySettings()
 				.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator)
 				.setWeight(0.15)
-				.setSubpopulation("person")
+				.setSubpopulation(SUBPOP_PERSON)
 		);
 
 		config.replanning().addStrategySettings(
 			new ReplanningConfigGroup.StrategySettings()
 				.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice)
 				.setWeight(0.15)
-				.setSubpopulation("person")
+				.setSubpopulation(SUBPOP_PERSON)
 		);
 
 		// Need to switch to warning for best score
