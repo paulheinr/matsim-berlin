@@ -19,7 +19,6 @@ import org.matsim.run.OpenBerlinScenario;
 class GartenfeldLinkChooser implements MultimodalLinkChooser {
 	// deliberately not public
 
-//	TODO: which link is access and which egress? in the methods below only one of them is used for both access and egress
 	static final Id<Link> accessLink = Id.createLinkId("network-DNG.1_r");
 
 	static final Id<Link> egressLink = Id.createLinkId("network-DNG.1");
@@ -38,7 +37,7 @@ class GartenfeldLinkChooser implements MultimodalLinkChooser {
 	@Override
 	public Link decideAccessLink(RoutingRequest routingRequest, String mode, Network network) {
 		if ( area.contains(MGC.coord2Point(routingRequest.getFromFacility().getCoord())) && TransportMode.car.equals( mode ) ){
-			return network.getLinks().get( Id.createLinkId( "network-DNG.1" ) );
+			return network.getLinks().get( accessLink );
 		} else {
 			return delegate.decideAccessLink( routingRequest, mode, network );
 		}
@@ -47,7 +46,7 @@ class GartenfeldLinkChooser implements MultimodalLinkChooser {
 	@Override
 	public Link decideEgressLink(RoutingRequest routingRequest, String mode, Network network) {
 		if ( area.contains(MGC.coord2Point(routingRequest.getToFacility().getCoord())) && TransportMode.car.equals( mode ) ){
-			return network.getLinks().get( Id.createLinkId( "network-DNG.1" ) );
+			return network.getLinks().get( Id.createLinkId( egressLink ) );
 		} else {
 			return delegate.decideEgressLink( routingRequest, mode, network ) ;
 		}

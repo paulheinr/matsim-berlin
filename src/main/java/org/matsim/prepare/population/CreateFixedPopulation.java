@@ -74,7 +74,9 @@ public class CreateFixedPopulation implements MATSimAppCommand {
 
 		log.info("Generated {} persons", population.getPersons().size());
 
-//		sort population by personId. Why is this necessary??? TODO
+//		sort population by personId.
+//		in population generation agents are created in groups/block of age groups e.g.
+//		this might cause bias for algorithms. Hence, we sort the population.
 		PopulationUtils.sortPersons(population);
 
 		ProjectionUtils.putCRS(population, OpenBerlinScenario.CRS);

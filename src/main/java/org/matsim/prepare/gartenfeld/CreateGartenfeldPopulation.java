@@ -28,7 +28,7 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 	@SuppressWarnings("MultipleStringLiteralsExtended")
 	public Integer call() throws Exception {
 
-//		TODO: where do the following values come from???
+//		for values, see: https://depositonce.tu-berlin.de/items/a724cdc7-d6ef-4b9c-a85c-27930d226828 page 4
 //		create gartenfeld population with person attributes and empty plans (except first home act).
 //		The plans are basically "stay home plans" for now. This will change in the next step (activity sampling).
 		new CreateFixedPopulation().execute(
@@ -52,8 +52,8 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 		);
 
 //		create locations for activities based on shp file and work commuter statistics for berlin.
-//		why only create 1 plan for each person? Shouldn't we create at least 5 plans with different act locations for each person and
-//		then run an optimization like we do for berlin / mexico city? TODO
+//		why only create 1 plan instead of 5 for each person? There is no reference data to optimize location choice against.
+//		k=5 plans would mean to create 5 different location sets. Those would be optimized against counts/reference data.
 		new InitLocationChoice().execute(
 			"--input", output,
 			"--output", output,

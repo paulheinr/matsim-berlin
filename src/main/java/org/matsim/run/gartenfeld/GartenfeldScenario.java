@@ -12,7 +12,6 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.population.algorithms.ParallelPersonAlgorithmUtils;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.MultimodalLinkChooserDefaultImpl;
@@ -44,6 +43,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		MATSimApplication.run(GartenfeldScenario.class, args);
 	}
 
+	@Override
 	protected Config prepareConfig(Config config) {
 
 		// Load the Gartenfeld specific part into the standard Berlin config
@@ -58,6 +58,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		return config;
 	}
 
+	@Override
 	protected void prepareScenario(Scenario scenario) {
 
 //		apply all changes of super class/method:
@@ -87,8 +88,6 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 					link.setAllowedModes(allowedModes);
 				}
 			}
-
-//			TODO: shouldn't we run the cleaner only when network has been changed? We dont need to clean if  not garageType != GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS
 			NetworkUtils.cleanNetwork(network, removeModes);
 
 			// Clean link ids that are not valid anymore
@@ -97,12 +96,11 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 					Runtime.getRuntime().availableProcessors(),
 					PersonNetworkLinkCheck.createPersonAlgorithm(network)
 			);
-
 		}
 	}
 
+	@Override
 	protected void prepareControler(Controler controler) {
-
 //		apply all changes of super class/method:
 //		add modules for simwrapper, ttbinding, qsimtiming, matsim-berlin-specific advanced scoring
 		super.prepareControler(controler);

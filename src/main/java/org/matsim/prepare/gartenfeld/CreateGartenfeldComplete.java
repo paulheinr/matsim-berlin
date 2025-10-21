@@ -39,7 +39,7 @@ public final class CreateGartenfeldComplete {
 		String fullNetwork = "input/gartenfeld/gartenfeld-v6.4.network.xml.gz";
 		String berlinNetwork = "input/v%s/berlin-v%s-network-with-pt.xml.gz".formatted(OpenBerlinScenario.VERSION, OpenBerlinScenario.VERSION);
 
-//		create "the" cutout for gartenfeld. I am currently (2025-08-10) not sure what that means exactly. TODO
+//		create "the" cutout for gartenfeld. I am currently (2025-10-08) not sure what that means exactly. TODO
 		new CreateScenarioCutOut().execute(
 				"--network", berlinNetwork,
 				"--population", fullPopulation,
