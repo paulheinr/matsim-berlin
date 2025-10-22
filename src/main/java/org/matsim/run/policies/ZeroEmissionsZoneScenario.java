@@ -19,6 +19,7 @@ import org.matsim.core.controler.Controler;
 import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.population.PopulationUtils;
 import org.matsim.core.population.algorithms.PermissibleModesCalculator;
+import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.core.utils.io.IOUtils;
@@ -217,6 +218,7 @@ public class ZeroEmissionsZoneScenario extends OpenBerlinScenario {
             @Override
             public void install() {
                 bind(PermissibleModesCalculator.class).to(ZEZPermissibleModesCalculator.class);
+                bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
             }
         });
     }
