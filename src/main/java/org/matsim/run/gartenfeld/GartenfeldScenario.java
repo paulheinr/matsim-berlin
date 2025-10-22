@@ -28,13 +28,11 @@ import java.util.Set;
  * See {@link org.matsim.prepare.gartenfeld.CreateGartenfeldComplete} for the creation of these input files.
  */
 public class GartenfeldScenario extends OpenBerlinScenario {
-
-	@CommandLine.Option(names = "--gartenfeld-config", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/gartenfeld-cutout.config.xml")
+//	TODO: the following default config.xml has a note that it should not be used! KLÄREN!
+	@CommandLine.Option(names = "--gartenfeld-config", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/gartenfeld-cutout-v6.4-1pct.config.xml")
 	private String gartenFeldConfig;
-
-	@CommandLine.Option(names = "--gartenfeld-shp", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/DNG_area.gpkg")
+	@CommandLine.Option(names = "--gartenfeld-shp", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/shp/DNG_area.gpkg")
 	private String gartenFeldArea;
-
 	@CommandLine.Option(names = "--parking-garages", description = "Enable parking garages. Possible values CAR_PARKING_ALLOWED_ON_ALL_LINKS or CAR_PARKING_IN_CENTRAL_GARAGE",
 		defaultValue = "CAR_PARKING_ALLOWED_ON_ALL_LINKS")
 	private GarageType garageType = GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS;

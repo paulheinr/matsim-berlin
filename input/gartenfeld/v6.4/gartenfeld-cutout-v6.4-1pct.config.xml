@@ -4,7 +4,7 @@
 
 	<!-- NOTE: This config only simulates a partial scenario -->
 
-	<!-- NOTE: Do not use it. Results don't seem to be plausible, use the gartenfeld.config.xml instead -->
+	<!-- NOTE: Do not use it. Results don't seem to be plausible, use the gartenfeld-v6.4-10pct.config.xml instead -->
 
 	<!-- This is a partial config that only contains parameters that are specific to Gartenfeld	-->
 	<!-- Use org.matsim.policies.gartenfeld.GartenfeldScenario to run this scenario -->
