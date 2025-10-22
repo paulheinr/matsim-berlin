@@ -64,19 +64,19 @@
 		</parameterset>
 	</module>
 
+<!--	TODO: set the following in code -->
 	<module name="simwrapper" >
 		<parameterset type="params" >
 			<param name="context" value="" />
 			<param name="mapCenter" value="13.39,52.51" />
 			<param name="mapZoomLevel" value="9.1" />
-			<param name="shp" value="https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/gartenfeld/input/area/area.shp" />
+			<param name="shp" value="./shp/area_utm32n.shp" />
 		</parameterset>
 		<parameterset type="params" >
 			<param name="context" value="gartenfeld" />
 			<param name="mapCenter" value="13.24,52.55" />
 			<param name="mapZoomLevel" value="14.2" />
-			<!-- Make sure this shp file is present relative to the config path -->
-			<param name="shp" value="https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/gartenfeld/input/area/gartenfeld-shape.shp" />
+			<param name="shp" value="./shp/gartenfeld_utm32n.shp" />
 		</parameterset>
 	</module>
 
