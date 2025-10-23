@@ -65,7 +65,14 @@ public class ZeroEmissionsZoneScenario extends OpenBerlinScenario {
             description = "Multiplier for the monetary distance rate of electric vehicle modes compared to their combustion engine counterparts.")
     private static double EV_COST_DISTANCE_FACTOR;
 
+    @CommandLine.Option(names = "--case",
+            defaultValue = "policy",
+            description = "Can be either of [policy, baseCaseContinued]. Default is policy. If baseCaseContinued, combustion engines are not banned from the area but the electric modes will still be introduced.")
+    private static SimulationCase SIMULATION_CASE;
 
+    private enum SimulationCase {
+        policy, baseCaseContinued
+    }
 
     private enum CEVAllowedOnRoadTypesInsideBanArea {
         nowhere, motorway, motorwayAndPrimaryAndTrunk
@@ -151,9 +158,11 @@ public class ZeroEmissionsZoneScenario extends OpenBerlinScenario {
         addElectricVehiclesToNetwork(scenario);
 
         //ban combustion engine vehicles from the defined area and delete all routes that touch the forbidden links
-        banModesFromNetworkArea(scenario,
-                IOUtils.resolveFileOrResource(URL_2_ZEZ_SINGLE_GEOM_SHAPE_FILE),
-                Set.of(TransportMode.car, TransportMode.ride, TransportMode.truck, "freight"));
+        if (SIMULATION_CASE.equals(SimulationCase.policy)) {
+            banModesFromNetworkArea(scenario,
+                    IOUtils.resolveFileOrResource(URL_2_ZEZ_SINGLE_GEOM_SHAPE_FILE),
+                    Set.of(TransportMode.car, TransportMode.ride, TransportMode.truck, "freight"));
+        }
 
 //        new NetworkWriter(scenario.getNetwork()).write("output/network-with-zez.xml.gz");
 //        log.info("network written");
