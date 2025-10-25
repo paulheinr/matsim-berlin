@@ -14,6 +14,8 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
+import org.matsim.api.core.v01.population.Activity;
+import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.application.MATSimApplication;
 import org.matsim.application.options.ShpOptions;
@@ -38,7 +40,7 @@ public class RunAutofreiPolicy extends OpenBerlinScenario {
 	}
 
 	private static void readWriteNetwork() {
-		Network network = NetworkUtils.readNetwork(ConfigUtils.loadConfig("input/v6.3/berlin-v6.3.config.xml").network().getInputFile());
+		Network network = NetworkUtils.readNetwork(ConfigUtils.loadConfig("input/v6.4/berlin-v6.4.config.xml").network().getInputFile());
 		restrictHighwayLinks(network);
 		NetworkUtils.writeNetwork(network, "berlin-v6.4.network-restricted.xml.gz");
 	}
@@ -55,9 +57,20 @@ public class RunAutofreiPolicy extends OpenBerlinScenario {
 			.flatMap(p -> p.getPlans().stream())
 			.flatMap(p -> p.getPlanElements().stream())
 			.forEach(p -> {
-				CleanPopulation.removeActivityLocation(p);
+				removeActivityLocation(p);
 				CleanPopulation.removeRouteFromLeg(p);
 			});
+	}
+
+	private static void removeActivityLocation(PlanElement el) {
+		if (el instanceof Activity act) {
+			act.setLinkId(null);
+
+			// there are agents with no coordinate. Only if the coordinate is set, we remove the facilityId the preserve the activity location.
+			if (act.getCoord() != null) {
+				act.setFacilityId(null);
+			}
+		}
 	}
 
 	private static void restrictHighwayLinks(Network network) {
