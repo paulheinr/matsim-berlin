@@ -78,7 +78,7 @@ public final class PiecewiseLinearlLegScoring implements org.matsim.core.scoring
 
 	@Override
 	public void finish() {
-
+		// Nothing to do
 	}
 
 	@Override

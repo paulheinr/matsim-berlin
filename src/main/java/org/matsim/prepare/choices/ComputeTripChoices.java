@@ -235,10 +235,8 @@ public class ComputeTripChoices implements MATSimAppCommand {
 						walkDistance += leg.getRoute().getDistance();
 					}
 
-					if (leg.getRoute() instanceof DefaultTransitPassengerRoute pt) {
-						if (Objects.equals(ptToMode.getMode(pt), "bus")) {
-							busLegs++;
-						}
+					if (leg.getRoute() instanceof DefaultTransitPassengerRoute pt && Objects.equals(ptToMode.getMode(pt), "bus")) {
+						busLegs++;
 					}
 
 					if (leg.getMode().equals(mode))

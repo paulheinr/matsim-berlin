@@ -53,6 +53,7 @@ public final class TransitTripScoring implements SumScoringFunction.TripScoring 
 
 	@Override
 	public void finish() {
+		// Nothing to be done
 	}
 
 	@Override
