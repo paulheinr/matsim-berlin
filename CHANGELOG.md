@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. 
 
+### 7.0 (2025-11)
+- Major update to scoring function and parameters
+  - The scoring now uses **tasteVariations** which assumes that each agent has a random preference towards each transport mode
+  - Parameters of the scoring function and taste distributions have been estimated based on the survey data SrV2018
+  - This approach uses **PseudoRandomScoringModule** to generate explicit random utility terms together with the **BestScore** plan selector to be consistent with random utility maximization theory
+  - More details of this approach are described in the dissertation _From Data to Simulation: Advanced Methods for Agent-Based Transport Modeling and Mode Choice Calibration_
+  
+- Network: For links where traffic counts are available, the capacity is set to the daily maximum
+
 ### 6.4 (2025-01)
 - Improved facility locations
   - OSM tag filtering has been improved to reduce number of wrongly assigned facility types
