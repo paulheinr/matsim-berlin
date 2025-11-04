@@ -1,12 +1,14 @@
 package org.matsim.run;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.application.MATSimApplication;
+import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.events.IterationStartsEvent;
 import org.matsim.core.controler.listener.IterationStartsListener;
@@ -15,6 +17,7 @@ import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.core.router.TripRouter;
 import org.matsim.core.router.TripStructureUtils;
 import org.matsim.core.trafficmonitoring.TravelTimeCalculator;
+import org.matsim.core.trafficmonitoring.TravelTimeCalculatorModule;
 import org.matsim.core.utils.timing.TimeInterpretation;
 import org.matsim.core.utils.timing.TimeTracker;
 import org.matsim.vehicles.Vehicle;
@@ -33,6 +36,12 @@ public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario 
 	@Override
 	protected void prepareControler(Controler controler) {
 		super.prepareControler(controler);
+		controler.addOverridingModule(new AbstractModule() {
+			@Override
+			public void install() {
+				install(new TravelTimeCalculatorModule());
+			}
+		});
 		controler.addControlerListener(new RideTravelTimeUpdaterListener());
 	}
 
@@ -43,6 +52,7 @@ public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario 
 		Scenario scenario;
 
 		@Inject
+		@Named("car")
 		TravelTimeCalculator travelTimeCalculator;
 
 		@Inject
@@ -80,6 +90,12 @@ public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario 
 							newTrip.add(activity);
 							timeTracker.addActivity(activity);
 						} else if (tripElement instanceof Leg leg) {
+							if (!leg.getMode().equals(TransportMode.ride)) {
+								newTrip.add(leg);
+								timeTracker.addLeg(leg);
+								continue;
+							}
+
 							// Recalculate travel time for ride leg
 							double totalTravelTime = 0.0;
 							NetworkRoute route = (NetworkRoute) leg.getRoute();

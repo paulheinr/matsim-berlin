@@ -95,7 +95,7 @@ public class RerouteRideOpenBerlinScenario extends OpenBerlinScenario {
 						t.getTripAttributes()
 					);
 
-					logger.info("Calculated new trip with main mode {} for person {}.", mode, person.getId());
+//					logger.info("Calculated new trip with main mode {} for person {}.", mode, person.getId());
 
 					TripRouter.insertTrip(plan, t.getOriginActivity(), newTrip, t.getDestinationActivity());
 
