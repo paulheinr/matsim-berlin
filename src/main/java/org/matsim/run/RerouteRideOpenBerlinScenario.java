@@ -23,10 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class FixedRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario {
+public class RerouteRideOpenBerlinScenario extends OpenBerlinScenario {
 
 	public static void main(String[] args) {
-		MATSimApplication.execute(FixedRideTravelTimesOpenBerlinScenario.class, args);
+		MATSimApplication.execute(RerouteRideOpenBerlinScenario.class, args);
 	}
 
 	@Override
@@ -70,17 +70,21 @@ public class FixedRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario {
 				TimeTracker timeTracker = new TimeTracker(timeInterpretation);
 
 				for (TripStructureUtils.Trip t : TripStructureUtils.getTrips(plan)) {
-					timeTracker.addActivity(t.getOriginActivity());
-
 					String mode = TripStructureUtils.identifyMainMode(t.getTripElements());
 
-					if (mode.equals(TransportMode.pt)) {
+//					if (mode.equals(TransportMode.pt)) {
+//						continue;
+//					}
+//
+//					if (config.qsim().getMainModes().contains(mode)) {
+//						continue;
+//					}
+
+					if (!mode.equals(TransportMode.ride)) {
 						continue;
 					}
 
-					if (config.qsim().getMainModes().contains(mode)) {
-						continue;
-					}
+					timeTracker.addActivity(t.getOriginActivity());
 
 					List<? extends PlanElement> newTrip = tripRouter.calcRoute(
 						mode,
