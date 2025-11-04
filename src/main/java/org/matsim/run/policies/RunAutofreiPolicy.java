@@ -67,9 +67,9 @@ public class RunAutofreiPolicy extends OpenBerlinScenario {
 			act.setLinkId(null);
 
 			// there are agents with no coordinate. Only if the coordinate is set, we remove the facilityId the preserve the activity location.
-			if (act.getCoord() != null) {
-				act.setFacilityId(null);
-			}
+//			if (act.getCoord() != null) {
+//				act.setFacilityId(null);
+//			}
 		}
 	}
 
