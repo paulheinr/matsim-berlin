@@ -90,22 +90,19 @@ public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario 
 							newTrip.add(activity);
 							timeTracker.addActivity(activity);
 						} else if (tripElement instanceof Leg leg) {
-							if (!leg.getMode().equals(TransportMode.ride)) {
-								newTrip.add(leg);
-								timeTracker.addLeg(leg);
-								continue;
+							if (leg.getMode().equals(TransportMode.ride)) {
+								// Recalculate travel time for ride leg
+								double totalTravelTime = 0.0;
+								NetworkRoute route = (NetworkRoute) leg.getRoute();
+								for (Id<Link> linkId : route.getLinkIds()) {
+									VehicleType rideVehicleType = scenario.getVehicles().getVehicleTypes().get(Id.create("ride", VehicleType.class));
+									Vehicle rideVehicle = scenario.getVehicles().getFactory().createVehicle(Id.createVehicleId("ride"), rideVehicleType);
+									totalTravelTime += travelTimeCalculator.getLinkTravelTimes().getLinkTravelTime(scenario.getNetwork().getLinks().get(linkId), timeTracker.getTime().seconds(), person, rideVehicle);
+								}
+								leg.setTravelTime(totalTravelTime);
 							}
-
-							// Recalculate travel time for ride leg
-							double totalTravelTime = 0.0;
-							NetworkRoute route = (NetworkRoute) leg.getRoute();
-							for (Id<Link> linkId : route.getLinkIds()) {
-								VehicleType rideVehicleType = scenario.getVehicles().getVehicleTypes().get(Id.create("ride", VehicleType.class));
-								Vehicle rideVehicle = scenario.getVehicles().getFactory().createVehicle(Id.createVehicleId("ride"), rideVehicleType);
-								totalTravelTime += travelTimeCalculator.getLinkTravelTimes().getLinkTravelTime(scenario.getNetwork().getLinks().get(linkId), timeTracker.getTime().seconds(), person, rideVehicle);
-							}
-							leg.setTravelTime(totalTravelTime);
 							timeTracker.addLeg(leg);
+							newTrip.add(leg);
 						}
 					}
 
