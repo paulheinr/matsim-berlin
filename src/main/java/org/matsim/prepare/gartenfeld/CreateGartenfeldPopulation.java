@@ -15,8 +15,10 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 	private static final String SRV_BERLIN = "../../shared-svn/projects/matsim-berlin/data/SrV";
 	private static final String SRV_YEAR = "2018";
 	private static final String SHARED_SVN = "../../shared-svn/projects/Mobility2Grid/data/scenarioCreation";
-	private static final String BERLIN_PUBLIC_SVN = "../../public-svn/matsim/scenarios/countries/de/berlin/berlin-v6.4/input";
 
+	@CommandLine.Option(names = "--berlin-svn", description = "Path to local matsim-berlin public-svn directory." +
+		"Has to point to the input dir.", required = true)
+	private String berlinPublicSvn;
 	@CommandLine.Option(names = "--output", description = "Path to output population", defaultValue = "input/gartenfeld/gartenfeld-population-10pct.xml.gz")
 	private String output;
 
@@ -65,8 +67,8 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 			"--output", outputLocChoice,
 			"--k", "1",
 //			I hard-coded the versions in the following to matsim-berlin 6.4.
-			"--facilities", BERLIN_PUBLIC_SVN + "/berlin-v6.4-facilities.xml.gz",
-			"--network", BERLIN_PUBLIC_SVN + "/berlin-v6.4-network.xml.gz",
+			"--facilities", berlinPublicSvn + "/berlin-v6.4-facilities.xml.gz",
+			"--network", berlinPublicSvn + "/berlin-v6.4-network.xml.gz",
 			"--shp", GERMANY + "/vg5000/vg5000_ebenen_0101/VG5000_GEM.shp",
 			"--commuter", GERMANY + "/regionalstatistik/commuter.csv",
 			"--berlin-commuter", SRV_BERLIN + "/" + SRV_YEAR + "/converted/berlin-work-commuter.csv",
@@ -109,7 +111,7 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 		// Merge with calibrated berlin plans into one single population
 		new MergePopulations().execute(
 //			the plans file is the *full* -- with 5 plans per agent -- calibrated berlin v6.4 plans file.
-			outputFixedSubtours, BERLIN_PUBLIC_SVN + "/berlin-v6.4-10pct.plans.xml.gz",
+			outputFixedSubtours, berlinPublicSvn + "/berlin-v6.4-10pct.plans.xml.gz",
 			"--output", output
 		);
 
