@@ -15,6 +15,7 @@ import java.nio.file.Path;
  */
 public final class CreateGartenfeldComplete {
 	private static final String BERLIN_PUBLIC_SVN = "../../public-svn/matsim/scenarios/countries/de/berlin/berlin-v6.4/input";
+	private static final String SHARED_SVN = "../../shared-svn/projects/Mobility2Grid/data/scenarioCreation";
 
 //	private access only
 	private CreateGartenfeldComplete() {
@@ -35,16 +36,19 @@ public final class CreateGartenfeldComplete {
 		if (!Files.exists(Path.of(outputPopulationPath))) {
 			new CreateGartenfeldPopulation().execute(
 					"--output", outputPopulationPath,
-				"--berlin-svn", BERLIN_PUBLIC_SVN
+				"--berlin-svn", BERLIN_PUBLIC_SVN,
+				"--shared-svn", SHARED_SVN
 			);
 		}
 
 //		(they are currently defined there)
 		String outputCutoutPopulationPath = "input/gartenfeld/v6.4/gartenfeld-v6.4.population-cutout-10pct.xml.gz";
 		String outputCutoutNetworkPath = "input/gartenfeld/v6.4/gartenfeld-v6.4.network-cutout.xml.gz";
+		String outputCutoutFacilitiesPath = "input/gartenfeld/gartenfeld-v6.4.facilities-cutout.xml.gz";
+		String outputCutoutNetworkChangeEventsPath = "input/gartenfeld/gartenfeld-v6.4.network-change-events.xml.gz";
 //		TODO: what is this network file??
 //		fullNetwork for me would be sth like berlin + gartenfeld?!
-//		und woher kommt dieses eigentlich? Bisher wird doch nur die population erstellt???
+//		und woher kommt dieses eigentlich? Bisher wird doch nur die population erstellt??? Das müsste mMn auch hier erzeugt werden!
 //		TODO: think about better name when above question is answered
 		String fullNetworkPath = "input/v6.4/gartenfeld/gartenfeld-v6.4.network.xml.gz";
 		String berlinNetworkPath = BERLIN_PUBLIC_SVN + "/berlin-v6.4-network-with-pt.xml.gz";
@@ -59,24 +63,23 @@ public final class CreateGartenfeldComplete {
 		new CreateScenarioCutOut().execute(
 				"--network", berlinNetworkPath,
 				"--population", outputPopulationPath,
-//				TODO: ref SVN
-				"--facilities", "input/v%s/berlin-v%s-facilities.xml.gz".formatted(OpenBerlinScenario.VERSION, OpenBerlinScenario.VERSION),
-//				TODO: ref SVN locally
-			"--events", "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v%s/output/berlin-v%s-10pct/berlin-v%s.output_events.xml.gz".formatted(OpenBerlinScenario.VERSION, OpenBerlinScenario.VERSION, OpenBerlinScenario.VERSION),
-//				TODO: file is on shared-svn now
-			"--shp", "input/gartenfeld/DNG_dilution_area.gpkg",
+				"--facilities", BERLIN_PUBLIC_SVN + "/berlin-v6.4-facilities.xml.gz",
+//				TODO: test if this path works. if not: make BERLIN_PUBLIC_SVN point to one dir level up compared to now.
+				"--events", BERLIN_PUBLIC_SVN + "/../output/berlin-v6.4.output_events.xml.gz",
+				"--shp", SHARED_SVN + "/DNG_model_area.gpkg",
 				"--input-crs", OpenBerlinScenario.CRS,
 				"--network-modes", "car,bike",
 				"--clean-modes", "truck,freight,ride",
-//				TODO: is 1000 enough?
-			"--buffer", "1000",
+//				after testing around in QGIS with different buffers 5k seems ok.
+				"--buffer", "5000",
 				"--keep-capacities",
 				"--output-network", outputCutoutNetworkPath,
 				"--output-population", outputCutoutPopulationPath,
-//				TODO: rather define below paths above as vars like for network and population
-				"--output-facilities", "input/gartenfeld/gartenfeld-v6.4.facilities-cutout.xml.gz",
-				"--output-network-change-events", "input/gartenfeld/gartenfeld-v6.4.network-change-events.xml.gz"
+				"--output-facilities", outputCutoutFacilitiesPath,
+				"--output-network-change-events", outputCutoutNetworkChangeEventsPath
 		);
+
+//		TODO: continue here
 
 //		call ModifyNetwork class. The class removes links from the network based on a provided csv/txt file.
 //		It also adds links to the network based on a provided shp file with line geometries.

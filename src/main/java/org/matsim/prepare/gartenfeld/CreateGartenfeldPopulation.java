@@ -14,11 +14,13 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 	private static final String GERMANY = "../../shared-svn/projects/matsim-germany";
 	private static final String SRV_BERLIN = "../../shared-svn/projects/matsim-berlin/data/SrV";
 	private static final String SRV_YEAR = "2018";
-	private static final String SHARED_SVN = "../../shared-svn/projects/Mobility2Grid/data/scenarioCreation";
 
 	@CommandLine.Option(names = "--berlin-svn", description = "Path to local matsim-berlin public-svn directory." +
 		"Has to point to the input dir.", required = true)
 	private String berlinPublicSvn;
+	@CommandLine.Option(names = "--shared-svn", description = "Path to local M2G data/scenarioCreation dir." +
+		"Dir contains data to create DNG.", required = true)
+	private String sharedSvn;
 	@CommandLine.Option(names = "--output", description = "Path to output population", defaultValue = "input/gartenfeld/gartenfeld-population-10pct.xml.gz")
 	private String output;
 
@@ -42,7 +44,7 @@ public class CreateGartenfeldPopulation implements MATSimAppCommand {
 			"--sample", "0.1",
 			"--unemployed", "0.013",
 			"--age-dist", "0.149", "0.203",
-			"--facilities", SHARED_SVN + "/DNG_residential.gpkg",
+			"--facilities", sharedSvn + "/DNG_residential.gpkg",
 			"--prefix", "dng",
 			"--output", outputFixed
 		);
