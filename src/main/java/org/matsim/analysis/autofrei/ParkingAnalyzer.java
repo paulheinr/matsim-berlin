@@ -1,0 +1,168 @@
+package org.matsim.analysis.autofrei;
+
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
+import org.matsim.api.core.v01.events.VehicleLeavesTrafficEvent;
+import org.matsim.api.core.v01.events.handler.VehicleEntersTrafficEventHandler;
+import org.matsim.api.core.v01.events.handler.VehicleLeavesTrafficEventHandler;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.api.experimental.events.EventsManager;
+import org.matsim.core.events.EventsUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ParkingAnalyzer {
+	public static void main(String[] args) {
+		EventsManager eventsManager = EventsUtils.createEventsManager();
+		ParkingInitializerEventsHandler initializer = new ParkingInitializerEventsHandler();
+		eventsManager.addHandler(initializer);
+
+		EventsUtils.readEvents(eventsManager, "./assets/filtered_parking_base.xml.gz");
+		Map<Id<Link>, Integer> initial = initializer.getCountByLink();
+
+		EventsManager eventsManager1 = EventsUtils.createEventsManager();
+		ParkingEventHandler parkingHandler = new ParkingEventHandler(initial);
+		eventsManager1.addHandler(parkingHandler);
+		EventsUtils.readEvents(eventsManager1, "./assets/filtered_parking_base.xml.gz");
+
+		parkingHandler.printExample();
+	}
+
+	private static class ParkingEventHandler implements VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
+		private final Map<Id<Link>, Integer> initial;
+		private final Map<Id<Link>, List<OccupancyEntry>> occupancyByLink = new HashMap<>(600000);
+
+		public ParkingEventHandler(Map<Id<Link>, Integer> initial) {
+			this.initial = initial;
+		}
+
+		@Override
+		public void handleEvent(VehicleEntersTrafficEvent event) {
+			if (isPt(event.getLinkId())) {
+				// Ignore pt links
+				return;
+			}
+
+			occupancyByLink.putIfAbsent(event.getLinkId(), new ArrayList<>());
+			var list = occupancyByLink.get(event.getLinkId());
+			if (list.isEmpty()) {
+				// no occupancy known yet, use initial occupancy
+				Integer initialOccupancy = initial.get(event.getLinkId()); //crashes if no initial occupancy known
+
+				if (initialOccupancy == null) {
+					System.err.println("No initial occupancy known for link " + event.getLinkId() + ", assuming 0");
+					initialOccupancy = 0;
+				}
+
+				list.add(new OccupancyEntry(0, event.getTime(), initialOccupancy));
+			} else {
+				// get last entry and create new one with increased occupancy
+				var last = list.getLast();
+				list.add(new OccupancyEntry(last.toTime(), event.getTime(), last.occupancy() - 1));
+			}
+		}
+
+		@Override
+		public void handleEvent(VehicleLeavesTrafficEvent event) {
+			if (isPt(event.getLinkId())) {
+				// Ignore pt links
+				return;
+			}
+
+			occupancyByLink.putIfAbsent(event.getLinkId(), new ArrayList<>());
+			var list = occupancyByLink.get(event.getLinkId());
+			if (list.isEmpty()) {
+				// no occupancy known yet, use initial occupancy
+				int initialOccupancy = initial.getOrDefault(event.getLinkId(), 0); // we might have links with 0 initial occupancy => they are not in the map
+				list.add(new OccupancyEntry(0, event.getTime(), initialOccupancy));
+			} else {
+				// get last entry and create new one with increased occupancy
+				var last = list.getLast();
+				list.add(new OccupancyEntry(last.toTime(), event.getTime(), last.occupancy() + 1));
+			}
+		}
+
+		void printExample() {
+			var id = Id.createLinkId("-80366517#2");
+			var list = occupancyByLink.get(id);
+			System.out.println("Occupancy for link " + id);
+			for (var entry : list) {
+				System.out.println("From " + entry.fromTime() + " to " + entry.toTime() + ": " + entry.occupancy());
+			}
+		}
+	}
+
+	private static class ParkingInitializerEventsHandler implements VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
+		private final Map<Id<Link>, Integer> countByLink = new HashMap<>(600000);
+		private final Map<Id<Person>, Id<Link>> personLinkMap = new HashMap<>(600000);
+		private double currentTime = 0;
+
+		@Override
+		public void handleEvent(VehicleEntersTrafficEvent event) {
+			if (isPt(event.getLinkId())) {
+				// Ignore pt links
+				return;
+			}
+
+			currentTime = event.getTime();
+
+			if (event.getPersonId().equals(Id.createPersonId("freight_2514"))) {
+				System.out.println("debug");
+			}
+
+			var before = personLinkMap.remove(event.getPersonId());
+			if (before == null) {
+				// Vehicle entered traffic without having left before => A car was already parked.
+				countByLink.putIfAbsent(event.getLinkId(), 0);
+				int count = countByLink.get(event.getLinkId());
+				count++;
+				countByLink.put(event.getLinkId(), count);
+			} else {
+				// Check consistency
+				if (!before.equals(event.getLinkId())) {
+//					throw new RuntimeException("Person " + event.getPersonId() + " left from link " + before + " but entered at link " + event.getLinkId());
+					// log warning
+					System.err.println("Warning: Person " + event.getPersonId() + " left from link " + before + " but entered at link " + event.getLinkId());
+				}
+				// Nothing else to do: A car already registered as left before is now entering traffic.
+			}
+
+		}
+
+		@Override
+		public void handleEvent(VehicleLeavesTrafficEvent event) {
+			if (isPt(event.getLinkId())) {
+				// Ignore pt links
+				return;
+			}
+
+			currentTime = event.getTime();
+
+			if (event.getPersonId().equals(Id.createPersonId("freight_2514"))) {
+				System.out.println("debug");
+			}
+
+			var before = personLinkMap.putIfAbsent(event.getPersonId(), event.getLinkId());
+			if (before != null) {
+				throw new RuntimeException("Person " + event.getPersonId() + " is already mapped to link " + before);
+			}
+		}
+
+		public Map<Id<Link>, Integer> getCountByLink() {
+			return countByLink;
+		}
+	}
+
+	private static boolean isPt(Id<Link> linkId) {
+		String s = linkId.toString();
+		return s.startsWith("pt_") || s.contains("_pt_");
+	}
+}
+
+record OccupancyEntry(double fromTime, double toTime, int occupancy) {
+}
+
