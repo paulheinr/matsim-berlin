@@ -6,30 +6,40 @@ import org.matsim.api.core.v01.events.VehicleLeavesTrafficEvent;
 import org.matsim.api.core.v01.events.handler.VehicleEntersTrafficEventHandler;
 import org.matsim.api.core.v01.events.handler.VehicleLeavesTrafficEventHandler;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.events.EventsUtils;
+import org.matsim.core.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
 
 public class ParkingAnalyzer {
 	public static void main(String[] args) {
+		String events = "./assets/filtered_parking_autofrei.xml.gz";
+		String networkPath = "./assets/berlin-v6.4.output_network.xml.gz";
+		String output = "./assets/parking_occupancy_autofrei.csv";
+
+		run(events, networkPath, output);
+	}
+
+	private static void run(String events, String networkPath, String output) {
 		EventsManager eventsManager = EventsUtils.createEventsManager();
 		ParkingInitializerEventsHandler initializer = new ParkingInitializerEventsHandler();
 		eventsManager.addHandler(initializer);
 
-		EventsUtils.readEvents(eventsManager, "./assets/filtered_parking_base.xml.gz");
+		EventsUtils.readEvents(eventsManager, events);
 		Map<Id<Link>, Integer> initial = initializer.getCountByLink();
 
 		EventsManager eventsManager1 = EventsUtils.createEventsManager();
 		ParkingEventHandler parkingHandler = new ParkingEventHandler(initial);
 		eventsManager1.addHandler(parkingHandler);
-		EventsUtils.readEvents(eventsManager1, "./assets/filtered_parking_base.xml.gz");
+		EventsUtils.readEvents(eventsManager1, events);
 
-		parkingHandler.printExample();
+		Network network = NetworkUtils.readNetwork(networkPath);
+		parkingHandler.writeCsv(Path.of(output), network);
 	}
 
 	private static class ParkingEventHandler implements VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
@@ -86,12 +96,32 @@ public class ParkingAnalyzer {
 			}
 		}
 
-		void printExample() {
-			var id = Id.createLinkId("-80366517#2");
-			var list = occupancyByLink.get(id);
-			System.out.println("Occupancy for link " + id);
-			for (var entry : list) {
-				System.out.println("From " + entry.fromTime() + " to " + entry.toTime() + ": " + entry.occupancy());
+		void writeCsv(Path file, Network network) {
+			var header = List.of("linkId", "from_time", "to_time", "length", "occupancy", "initial");
+			var rows = new ArrayList<List<String>>();
+			for (var entry : occupancyByLink.entrySet()) {
+				Id<Link> linkId = entry.getKey();
+
+				OccupancyEntry max = entry.getValue().stream().max(Comparator.comparing(OccupancyEntry::occupancy)).orElseThrow();
+				var row = List.of(
+					linkId.toString(),
+					String.valueOf(max.fromTime()),
+					String.valueOf(max.toTime()),
+					String.valueOf(network.getLinks().get(linkId).getLength()),
+					String.valueOf(max.occupancy()),
+					String.valueOf(initial.getOrDefault(linkId, -1))
+				);
+				rows.add(row);
+			}
+
+			// Use Apache Commons CSV to write the file
+			try (var writer = java.nio.file.Files.newBufferedWriter(file);
+				 var csvPrinter = org.apache.commons.csv.CSVFormat.DEFAULT.builder().setHeader(header.toArray(new String[0])).build().print(writer)) {
+				for (var row : rows) {
+					csvPrinter.printRecord(row);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
 		}
 	}
@@ -161,8 +191,8 @@ public class ParkingAnalyzer {
 		String s = linkId.toString();
 		return s.startsWith("pt_") || s.contains("_pt_");
 	}
-}
 
-record OccupancyEntry(double fromTime, double toTime, int occupancy) {
+	record OccupancyEntry(double fromTime, double toTime, int occupancy) {
+	}
 }
 
