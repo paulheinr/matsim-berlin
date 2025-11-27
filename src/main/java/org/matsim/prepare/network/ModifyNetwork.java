@@ -15,7 +15,6 @@ import org.matsim.api.core.v01.network.Node;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.utils.geometry.geotools.MGC;
 import picocli.CommandLine;
 
@@ -29,7 +28,7 @@ import java.util.Set;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
-@CommandLine.Command(name = "modify-network", description = "Remove or add network elements")
+@CommandLine.Command(name = "modify-network", description = "Remove or add network elements based on given files.")
 public class ModifyNetwork implements MATSimAppCommand {
 
 	private static final Logger log = LogManager.getLogger(ModifyNetwork.class);
@@ -37,7 +36,7 @@ public class ModifyNetwork implements MATSimAppCommand {
 	@CommandLine.Option(names = {"--network"}, description = "Path to the network file", required = true)
 	private String networkPath;
 
-	@CommandLine.Option(names = {"--remove-links"}, description = "Path to the CSV file with link ids to remove")
+	@CommandLine.Option(names = {"--remove-links"}, description = "Path to the CSV/TXT file with link ids to remove")
 	private Path removeCSV;
 
 	@CommandLine.Option(names = {"--matching-distance"}, description = "Distance in meters to match links from shapefile to network nodes", defaultValue = "10.0")
@@ -73,14 +72,9 @@ public class ModifyNetwork implements MATSimAppCommand {
 			addLinksFromShape();
 		}
 
-//		TODO: change to NetworkUtils.cleanNetwork
-		MultimodalNetworkCleaner cleaner = new MultimodalNetworkCleaner(network);
-
-		cleaner.run(Set.of(TransportMode.car));
-		cleaner.run(Set.of(TransportMode.ride));
-		cleaner.run(Set.of(TransportMode.bike));
-		cleaner.run(Set.of(TransportMode.truck));
-		cleaner.run(Set.of("freight"));
+//		clean network
+		NetworkUtils.cleanNetwork(network, Set.of(TransportMode.car, TransportMode.ride, TransportMode.bike, TransportMode.truck,
+			"freight"));
 
 		NetworkUtils.writeNetwork(network, output.toString());
 
