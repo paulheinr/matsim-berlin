@@ -16,6 +16,7 @@ import org.matsim.core.population.algorithms.ParallelPersonAlgorithmUtils;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.MultimodalLinkChooserDefaultImpl;
 import org.matsim.run.OpenBerlinScenario;
+import org.matsim.simwrapper.SimWrapperConfigGroup;
 import picocli.CommandLine;
 
 import java.util.HashSet;
@@ -28,8 +29,7 @@ import java.util.Set;
  * See {@link org.matsim.prepare.gartenfeld.CreateGartenfeldComplete} for the creation of these input files.
  */
 public class GartenfeldScenario extends OpenBerlinScenario {
-//	TODO: the following default config.xml has a note that it should not be used! KLÄREN!
-	@CommandLine.Option(names = "--gartenfeld-config", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/gartenfeld-cutout-v6.4-1pct.config.xml")
+	@CommandLine.Option(names = "--gartenfeld-config", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/gartenfeld-cutout-v6.4-10pct.config.xml")
 	private String gartenFeldConfig;
 	@CommandLine.Option(names = "--gartenfeld-shp", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/shp/DNG_area.gpkg")
 	private String gartenFeldArea;
@@ -37,7 +37,11 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		defaultValue = "CAR_PARKING_ALLOWED_ON_ALL_LINKS")
 	private GarageType garageType = GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS;
 
-		public static void main(String[] args) {
+	public GartenfeldScenario() {
+		super(String.format("input/v%s/berlin-v%s.config.xml", VERSION, VERSION));
+	}
+
+	public static void main(String[] args) {
 		MATSimApplication.run(GartenfeldScenario.class, args);
 	}
 
@@ -53,6 +57,22 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 //		add cfg group for bicycle module, configure emissions
 		super.prepareConfig(config);
 
+//		set simwrapper params in code rather than from config.xml
+		SimWrapperConfigGroup simWrapper = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
+
+//		berlin wide
+		simWrapper.defaultParams().setContext("");
+		simWrapper.defaultParams().setMapCenter("13.39,52.51");
+		simWrapper.defaultParams().setMapZoomLevel(9.1);
+		simWrapper.defaultParams().setShp("../gartenfeld/v6.4/shp/area_utm32n.shp");
+
+//		gartenfeld specific
+//		.get(context) does not only get the params, but also creates them if not present in current config. also adds them to config.
+		SimWrapperConfigGroup.ContextParams gartenfeldContext = simWrapper.get("gartenfeld");
+		gartenfeldContext.setMapCenter("13.24,52.55");
+		gartenfeldContext.setMapZoomLevel(14.2);
+		gartenfeldContext.setShp("../gartenfeld/v6.4/shp/gartenfeld_utm32n.shp");
+
 		return config;
 	}
 
@@ -67,7 +87,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		Set<String> removeModes = Set.of(TransportMode.car, TransportMode.truck, "freight", TransportMode.ride);
 
 //		if we want to run the scenario with a central DNG parking garage, we have to remove car etc. from all DNG links
-		if (garageType != GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS) {
+		if (garageType == GarageType.CAR_PARKING_IN_CENTRAL_GARAGE) {
 
 			for (Link link : network.getLinks().values()) {
 				// Make all links car free
