@@ -13,6 +13,7 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.application.options.ShpOptions;
+import org.matsim.contrib.drt.estimator.DrtEstimatorParams;
 import org.matsim.contrib.drt.optimizer.constraints.DrtOptimizationConstraintsParams;
 import org.matsim.contrib.drt.optimizer.constraints.DrtOptimizationConstraintsSetImpl;
 import org.matsim.contrib.drt.optimizer.insertion.extensive.ExtensiveInsertionSearchParams;
@@ -59,19 +60,19 @@ public class DrtAndIntermodalityOptions {
 	@CommandLine.Option(names = "--wt-std", description = "waiting time standard deviation", defaultValue = "0.3")
 	protected double waitTimeStd;
 
-	@CommandLine.Option(names = "--ride-time-alpha", description = "ride time estimator alpha", defaultValue = "1.25")
+	@CommandLine.Option(names = "--ride-time-alpha", description = "ride time estimator alpha", defaultValue = "1.")
 	protected double rideTimeAlpha;
 
-	@CommandLine.Option(names = "--ride-time-beta", description = "ride time estimator beta", defaultValue = "300")
+	@CommandLine.Option(names = "--ride-time-beta", description = "ride time estimator beta", defaultValue = "0.0")
 	protected double rideTimeBeta;
 
 	@CommandLine.Option(names = "--ride-time-std", description = "ride duration standard deviation", defaultValue = "0.3")
 	protected double rideTimeStd;
 
-	@CommandLine.Option(names = "--drt-shp", description = "Path to shp file for adding drt not network links as an allowed mode.", defaultValue = "../drt-area/hoyerswerda-ruhland_Bhf-utm32N.shp")
+	@CommandLine.Option(names = "--drt-shp", description = "Path to shp file for adding drt not network links as an allowed mode.", defaultValue = "../gartenfeld/v6.4/shp/drt-area/gartenfeld_paulsternstrasse_bhf_utm32n.shp")
 	private String drtAreaShp;
 
-	@CommandLine.Option(names = "--intermodal-shp", description = "Path to shp file for adding intermodal tags for drt to pt intermodality.", defaultValue = "../intermodal-area/pt-intermodal-areas-ruhland-spremberg.shp")
+	@CommandLine.Option(names = "--intermodal-shp", description = "Path to shp file for adding intermodal tags for drt to pt intermodality.", defaultValue = "../gartenfeld/v6.4/shp/intermodal-area/intermodal_area_gartenfeld_paulsternstrasse_bhf_utm32n.shp")
 	private String intermodalAreaShp;
 
 	@CommandLine.Option(names = "--intermodal", defaultValue = "ENABLED", description = "enable intermodality for DRT service")
@@ -106,6 +107,9 @@ public class DrtAndIntermodalityOptions {
 			optimizationConstraintsSet.setMaxWalkDistance(ConfigUtils.addOrGetModule(config, TransitRouterConfigGroup.class).getSearchRadius());
 			drtConfigGroup.addParameterSet(optimizationConstraints);
 			drtConfigGroup.addParameterSet(new ExtensiveInsertionSearchParams());
+
+//			drt estimator param set is necessary for newer matsim version than used in lausitzv2.0
+			drtConfigGroup.addParameterSet(new DrtEstimatorParams());
 
 			//			check if every feature of shp file has attr typ_wt for drt estimation. Add attr with standard value if not present
 //			+ set new shp file as drtServiceAreaShapeFile
@@ -173,7 +177,7 @@ public class DrtAndIntermodalityOptions {
 //		preparation needs to be done with berlin shp not service area shp
 
 		//		add drt as allowed mode for berlin
-		Geometry geometry = new ShpOptions("../gartenfeld/v6.4/shp/area_utm32n.shp", null, null).getGeometry();
+		Geometry geometry = new ShpOptions(IOUtils.extendUrl(scenario.getConfig().getContext(), "../gartenfeld/v6.4/shp/area_utm32n.shp").toString(), null, null).getGeometry();
 
 //		with the estimator, drt is teleported, but we may need drt as an allowed mode for
 //		separate drt post simulation
@@ -208,7 +212,7 @@ public class DrtAndIntermodalityOptions {
 
 			Vehicle drtDummy = VehicleUtils.createVehicle(Id.createVehicleId("drtDummy"), drtType);
 			drtDummy.getAttributes().putAttribute("dvrpMode", TransportMode.drt);
-			drtDummy.getAttributes().putAttribute("startLink", "706048410#0");
+			drtDummy.getAttributes().putAttribute("startLink", GartenfeldLinkChooser.accessLink.toString());
 			drtDummy.getAttributes().putAttribute("serviceBeginTime", 0.);
 			drtDummy.getAttributes().putAttribute("serviceEndTime", 86400.);
 
@@ -217,7 +221,6 @@ public class DrtAndIntermodalityOptions {
 
 		//			tag intermodal pt stops for intermodality between pt and drt
 		if (intermodal == GartenfeldUtils.FunctionalityHandling.ENABLED) {
-//			TODO: create shp file for intermodal stop tagging. Should be Paulsternstr extracted from drt service area
 			PrepareTransitSchedule.tagIntermodalStops(scenario.getTransitSchedule(), new ShpOptions(IOUtils.extendUrl(scenario.getConfig().getContext(), intermodalAreaShp).toString(), null, null));
 		}
 	}

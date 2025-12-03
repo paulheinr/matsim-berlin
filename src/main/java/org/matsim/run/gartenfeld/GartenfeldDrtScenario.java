@@ -64,7 +64,6 @@ public class GartenfeldDrtScenario extends GartenfeldScenario {
 
 		Scenario scenario = controler.getScenario();
 		Network network = scenario.getNetwork();
-//		TODO: create drt service area shp
 		ShpOptions shp = new ShpOptions(IOUtils.extendUrl(config.getContext(), drtOpt.getDrtAreaShp()).toString(), null, null);
 
 //		apply all controller changes from base scenario class
