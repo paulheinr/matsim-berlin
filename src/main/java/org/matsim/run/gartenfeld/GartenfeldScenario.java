@@ -1,5 +1,6 @@
 package org.matsim.run.gartenfeld;
 
+import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -17,6 +18,7 @@ import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.MultimodalLinkChooserDefaultImpl;
 import org.matsim.run.OpenBerlinScenario;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
+import org.matsim.utils.GartenfeldUtils;
 import picocli.CommandLine;
 
 import java.util.HashSet;
@@ -36,6 +38,8 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 	@CommandLine.Option(names = "--parking-garages", description = "Enable parking garages. Possible values CAR_PARKING_ALLOWED_ON_ALL_LINKS or CAR_PARKING_IN_CENTRAL_GARAGE",
 		defaultValue = "CAR_PARKING_ALLOWED_ON_ALL_LINKS")
 	private GarageType garageType = GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS;
+	@CommandLine.Option(names = "--explicit-walk-intermodality", defaultValue = "ENABLED", description = "Define if explicit walk intermodality parameter to/from pt should be set or not (use default).")
+	static GartenfeldUtils.FunctionalityHandling explicitWalkIntermodalityBaseCase;
 
 	public GartenfeldScenario() {
 		super(String.format("input/v%s/berlin-v%s.config.xml", VERSION, VERSION));
@@ -43,6 +47,26 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 
 	public static void main(String[] args) {
 		MATSimApplication.run(GartenfeldScenario.class, args);
+	}
+
+	public static GartenfeldUtils.FunctionalityHandling getExplicitWalkIntermodalityBaseCase() {
+		return explicitWalkIntermodalityBaseCase;
+	}
+
+	public static void setExplicitIntermodalityParamsForWalkToPt(SwissRailRaptorConfigGroup srrConfig) {
+		srrConfig.setUseIntermodalAccessEgress(true);
+		srrConfig.setIntermodalAccessEgressModeSelection(SwissRailRaptorConfigGroup.IntermodalAccessEgressModeSelection.CalcLeastCostModePerStop);
+
+//			add walk as access egress mode to pt
+		SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet accessEgressWalkParam = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
+		accessEgressWalkParam.setMode(TransportMode.walk);
+//			initial radius for pt stop search
+//		5k based on manual check in google maps for gartenfeld-Paulsternstr and gartenfeld-Haselhorst. 5k should be more than enough
+		accessEgressWalkParam.setInitialSearchRadius(5000);
+		accessEgressWalkParam.setMaxRadius(10000);
+//			with this, initialSearchRadius gets extended by the set value until maxRadius is reached
+		accessEgressWalkParam.setSearchExtensionRadius(1000);
+		srrConfig.addIntermodalAccessEgress(accessEgressWalkParam);
 	}
 
 	@Override
@@ -72,6 +96,10 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		gartenfeldContext.setMapCenter("13.24,52.55");
 		gartenfeldContext.setMapZoomLevel(14.2);
 		gartenfeldContext.setShp("../gartenfeld/v6.4/shp/gartenfeld_utm32n.shp");
+
+		if (explicitWalkIntermodalityBaseCase == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+			setExplicitIntermodalityParamsForWalkToPt(ConfigUtils.addOrGetModule(config, SwissRailRaptorConfigGroup.class));
+		}
 
 		return config;
 	}
