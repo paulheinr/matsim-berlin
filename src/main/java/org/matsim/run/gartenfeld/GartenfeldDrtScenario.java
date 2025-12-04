@@ -40,7 +40,6 @@ public class GartenfeldDrtScenario extends GartenfeldScenario {
 
 //		apply all changes from base run class
 //		this also includes changes from berlin v6.4
-//		TODO: check if we have to have run param gartenfeld config  etc. in this class (should work without)
 		super.prepareConfig(config);
 
 //		apply necessary config changes related to drt and drt-pt intermodality
