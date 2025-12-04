@@ -60,6 +60,7 @@ public class OpenBerlinWithParking extends OpenBerlinScenario {
 	protected void prepareScenario(Scenario scenario) {
 		super.prepareScenario(scenario);
 
+		// Read parking supply data from CSV and add to link attributes
 		Map<Id<Link>, ParkingSpots> parkingSpotsPerLink = readCSV(parkingSupply);
 		for (Link link : scenario.getNetwork().getLinks().values()) {
 			if (parkingSpotsPerLink.containsKey(link.getId())) {
@@ -102,6 +103,10 @@ public class OpenBerlinWithParking extends OpenBerlinScenario {
 
 	public record ParkingSpots(int onstreetSpots, int offstreetSpots) {
 	}
+
+	/*
+	Read parking supply data from a CSV file and return a map of Link IDs to ParkingSpots objects.
+	 */
 
 	public static Map<Id<Link>, ParkingSpots> readCSV(String filePath) {
 		Map<Id<Link>, ParkingSpots> parkingMap = new HashMap<>();
