@@ -35,7 +35,7 @@ This class extends the matsim berlin scenario by parking functionality
 public class OpenBerlinWithParking extends OpenBerlinScenario {
 
 	@CommandLine.Option(names = "--parking-supply",
-		description = "Path to parking supply data")
+		description = "Path to parking supply data", required = true)
 	private String parkingSupply;
 
 	@CommandLine.Option(names = "--alpha", description = "Alpha parameter for Belloche parking search time function", defaultValue = "0.11")
