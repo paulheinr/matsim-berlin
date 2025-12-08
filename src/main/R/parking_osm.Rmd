@@ -27,10 +27,10 @@ Read in MATSim network
 
 ```{r, include=FALSE}
 getwd()
-input_network_filename <- "berlin-v6.3-network-with-pt.xml.gz"
+input_network_filename <- "berlin-v6.4-network-with-pt.xml.gz"
 
 if (!file.exists(input_network_filename)) {
-  download.file("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v6.3/input/berlin-v6.3-network-with-pt.xml.gz", input_network_filename)
+  download.file("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v6.4/input/berlin-v6.4-network-with-pt.xml.gz", input_network_filename)
 }
 network_berlin <- matsim::read_network(input_network_filename)
 
@@ -52,7 +52,7 @@ berlin_districts_shp <- st_read(berlin_districts_shp_filename) %>% st_transform(
 Read in area within S-Bahn Ring (Hundekopf)
 
 ```{r, include=FALSE}
-hundekopf <- st_read("input/v6.3/hundekopf-shp/hundekopf-carBanArea-25832.shp")
+hundekopf <- st_read("/git/matsim-berlin/input/v6.4/hundekopf-shp/hundekopf-carBanArea-25832.shp")
 ```
 
 # Question 1: How many public parking spots are there per meter of MATSim link.
@@ -124,7 +124,7 @@ links_in_berlin_filtered %>%
 
 ```
 
-Result = 0.17 parking spots per meter of residential street. Or, in reverse, 1 parking spot every 6 meters.
+Result = 0.15 parking spots per meter of residential street. Or, in reverse, 1 parking spot every 6.6 meters.
 
 This is too many, assuming that there are actually no parking spots around intersections or bus stops etc. The assumption that only roads w/ ≤50kmh have parking spots is not correct in Berlin. Many 50kmh roads also have parking spots.
 
@@ -186,7 +186,7 @@ amenity <- opq(bbox = 'Berlin, Germany') %>%
   osmdata_sf()
 
 
-tmap_options(check.and.fix = TRUE)
+#tmap_options(check.and.fix = TRUE)
 
 # POLYGONS & MULTIPOLYGONS
 amenity_polygon <- amenity$osm_polygons %>%
@@ -371,7 +371,7 @@ on_and_offstreet_parking_per_link <- full_join(onstreet_parking, offstreet_parki
 
 paste0("Onstreet: ", sum(on_and_offstreet_parking_per_link$onstreet_spots, na.rm = T), " | ",
        "Offstreet: ", sum(on_and_offstreet_parking_per_link$offstreet_spots, na.rm = T))
-write_csv(on_and_offstreet_parking_per_link, file = "input/v6.3/parking/parking_per_link_wip_2025_02_06.csv")
+write_csv(on_and_offstreet_parking_per_link, file = "parking_per_link.csv")
 
 
 on_and_offstreet_parking_per_link %>% view()
