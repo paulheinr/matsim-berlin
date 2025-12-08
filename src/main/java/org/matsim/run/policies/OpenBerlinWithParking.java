@@ -8,6 +8,7 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.application.MATSimApplication;
 import org.matsim.core.config.Config;
+import org.matsim.core.config.groups.ReplanningConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
@@ -18,6 +19,7 @@ import org.matsim.core.network.kernel.ConstantKernelDistance;
 import org.matsim.core.network.kernel.DefaultKernelFunction;
 import org.matsim.core.network.kernel.KernelDistance;
 import org.matsim.core.network.kernel.NetworkKernelFunction;
+import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.legacy.run.RunBerlinScenario;
 import org.matsim.run.OpenBerlinScenario;
 import picocli.CommandLine;
@@ -47,6 +49,9 @@ public class OpenBerlinWithParking extends OpenBerlinScenario {
 	@CommandLine.Option(names = "--beta", description = "Beta parameter for Belloche parking search time function", defaultValue = "-8.586")
 	private double beta;
 
+	@CommandLine.Option(names = "--noModeChoice", defaultValue = "true")
+	private boolean noModeChoice;
+
 	private static final Logger log = LogManager.getLogger(OpenBerlinWithParking.class );
 
 
@@ -58,6 +63,17 @@ public class OpenBerlinWithParking extends OpenBerlinScenario {
 	protected Config prepareConfig(Config config) {
 		Config preparedConfig = super.prepareConfig(config);
 		preparedConfig.controller().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+
+		if (noModeChoice) {
+			// no mode choice if we simulate parking
+			for (ReplanningConfigGroup.StrategySettings strategySettings : config.replanning().getStrategySettings()) {
+				if (strategySettings.getStrategyName().equals(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice)) {
+					strategySettings.setWeight(0.0);
+				}
+			}
+		}
+
+
 		return preparedConfig;
 	}
 
