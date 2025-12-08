@@ -24,6 +24,8 @@ import picocli.CommandLine;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.matsim.utils.GartenfeldUtils.prepareVehicleTypesForEmissionAnalysis;
+
 /**
  * Scenario class for Gartenfeld.
  * <p>
@@ -143,6 +145,9 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 					PersonNetworkLinkCheck.createPersonAlgorithm(network)
 			);
 		}
+
+//		add hbefa types to vehicle types
+		prepareVehicleTypesForEmissionAnalysis(scenario);
 	}
 
 	@Override
