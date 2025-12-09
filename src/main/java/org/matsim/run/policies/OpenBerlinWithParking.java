@@ -88,8 +88,10 @@ public class OpenBerlinWithParking extends OpenBerlinScenario {
 		Map<Id<Link>, ParkingSpots> parkingSpotsPerLink = readCSV(parkingSupply);
 		for (Link link : scenario.getNetwork().getLinks().values()) {
 			if (parkingSpotsPerLink.containsKey(link.getId())) {
-				link.getAttributes().putAttribute(LINK_ON_STREET_SPOTS, Math.round(parkingSpotsPerLink.get(link.getId()).onstreetSpots) * sampleSize);
-				link.getAttributes().putAttribute(LINK_OFF_STREET_SPOTS, Math.round(parkingSpotsPerLink.get(link.getId()).offstreetSpots) * sampleSize);
+				//log.info("Parking spots for " + link.getId() + ": on-street=" + parkingSpotsPerLink.get(link.getId()).onstreetSpots + ", off-street=" + parkingSpotsPerLink.get(link.getId()).offstreetSpots);
+				//log.info("Scaled parking spots for " + link.getId() + ": on-street=" + onStreetParkingSpots + ", off-street=" + offStreetParkingSpots);
+				link.getAttributes().putAttribute(LINK_ON_STREET_SPOTS, (int) Math.round(parkingSpotsPerLink.get(link.getId()).onstreetSpots * sampleSize));
+				link.getAttributes().putAttribute(LINK_OFF_STREET_SPOTS, (int) Math.round(parkingSpotsPerLink.get(link.getId()).offstreetSpots * sampleSize));
 			}
 		}
 
