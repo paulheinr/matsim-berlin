@@ -18,10 +18,14 @@ import org.matsim.contrib.dvrp.run.DvrpModule;
 import org.matsim.contrib.dvrp.run.DvrpQSimComponents;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
+import org.matsim.core.config.groups.ReplanningConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.utils.io.IOUtils;
 import picocli.CommandLine;
+
+import java.util.Collection;
 
 /**
  * Scenario class for Gartenfeld DRT scenario.
@@ -44,6 +48,31 @@ public class GartenfeldDrtScenario extends GartenfeldScenario {
 
 //		apply necessary config changes related to drt and drt-pt intermodality
 		drtOpt.configureDrtConfig(config);
+
+//		changes for 1 it with intermodal drt
+//		config.controller().setLastIteration(1);
+//
+//		Collection<ReplanningConfigGroup.StrategySettings> strategies = config.replanning().getStrategySettings();
+//
+//		for (ReplanningConfigGroup.StrategySettings s : strategies) {
+//			if (s.getSubpopulation().equals(SUBPOP_PERSON)) {
+//				switch (s.getStrategyName()) {
+//					case DefaultPlanStrategiesModule.DefaultSelector.ChangeExpBeta:
+//						s.setWeight(0.);
+//						break;
+//					case DefaultPlanStrategiesModule.DefaultStrategy.ReRoute:
+//						s.setWeight(1.);
+//						break;
+//					case DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice:
+//						s.setWeight(0.);
+//						break;
+//					case DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator:
+//						s.setWeight(0.);
+//						break;
+//					default: throw new IllegalStateException("Invalid replanning strategy named: " + s.getStrategyName());
+//				}
+//			}
+//		}
 
 		return config;
 	}
