@@ -182,7 +182,8 @@ public class DrtAndIntermodalityOptions {
 //		with the estimator, drt is teleported, but we may need drt as an allowed mode for
 //		separate drt post simulation
 		for (Link link : scenario.getNetwork().getLinks().values()) {
-			if (link.getAllowedModes().contains(TransportMode.car)) {
+			if (link.getAllowedModes().contains(TransportMode.car) || link.getId().toString().contains("DNG")) {
+//				DNG links might not have car as an allowed mode because of central garage
 				boolean isInside = MGC.coord2Point(link.getFromNode().getCoord()).within(geometry) ||
 					MGC.coord2Point(link.getToNode().getCoord()).within(geometry);
 
@@ -236,7 +237,9 @@ public class DrtAndIntermodalityOptions {
 			.setMarginalUtilityOfTraveling(-0.));
 
 		if (fareHandling == GartenfeldUtils.FunctionalityHandling.ENABLED) {
-			scoringConfigGroup.getModes().get(TransportMode.drt).setDailyMonetaryConstant(scoringConfigGroup.getModes().get(TransportMode.pt).getDailyMonetaryConstant());
+//			if we charge (pt/drt) fare via daily constant, we should always set daily constant for drt=0.
+//			drt is only access/egress to/from Paulsternstr. Hence, the fare is already paid with the daily constant of pt.
+			scoringConfigGroup.getModes().get(TransportMode.drt).setDailyMonetaryConstant(0.);
 		} else {
 			scoringConfigGroup.getModes().get(TransportMode.drt).setDailyMonetaryConstant(0.);
 		}
