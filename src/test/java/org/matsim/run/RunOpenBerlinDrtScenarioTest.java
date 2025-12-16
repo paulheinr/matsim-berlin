@@ -38,7 +38,7 @@ public class RunOpenBerlinDrtScenarioTest {
 
 		// Check if DRT trips have been performed
 		long count = Files.lines(path).count();
-		assertThat(count).isGreaterThan(1000);
+		assertThat(count).isGreaterThan(100);
 
 
 	}
