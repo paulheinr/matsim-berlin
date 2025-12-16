@@ -397,5 +397,16 @@ public class IndividualPersonScoringParameters implements ScoringParametersForPe
 				rnd.nextLong();
 			}
 		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (!(o instanceof Context context)) return false;
+			return Objects.deepEquals(seed, context.seed) && Objects.equals(normal, context.normal) && Objects.equals(gumbel, context.gumbel) && Objects.equals(tn, context.tn) && Objects.equals(tn2, context.tn2) && Objects.equals(rnd, context.rnd);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(normal, tn, tn2, gumbel, Arrays.hashCode(seed), rnd);
+		}
 	}
 }
