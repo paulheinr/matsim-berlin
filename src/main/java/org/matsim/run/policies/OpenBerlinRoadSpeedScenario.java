@@ -39,6 +39,12 @@ public class OpenBerlinRoadSpeedScenario extends OpenBerlinScenario {
 	public Config prepareConfig(Config config) {
 		//		apply all config changes from base scenario class
 		super.prepareConfig(config);
+
+		if (relativeSpeedChange == 0.0) {
+			log.fatal("You tried to set a relative freespeed change of {}. This results in freespeeds of 0 km/h on affected links, which is invalid. Aborting!", relativeSpeedChange);
+			throw new IllegalStateException("");
+		}
+
 		return config;
 	}
 

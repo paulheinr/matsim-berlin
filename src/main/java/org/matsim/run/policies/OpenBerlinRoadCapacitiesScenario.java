@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class OpenBerlinRoadCapacitiesScenario extends OpenBerlinScenario {
 	Logger log = LogManager.getLogger(OpenBerlinRoadCapacitiesScenario.class);
 
-	@CommandLine.Option(names = "--speed-shp", description = "Path to shp file for adaption of link capacities. Should be shape of berlin or related.", defaultValue = "TODO")
+	@CommandLine.Option(names = "--capacities-shp", description = "Path to shp file for adaption of link capacities. Should be shape of berlin or related.", required = true)
 	private String capacityShp;
 	@CommandLine.Option(names = "--capacity-relative-change", description = "provide a value that is bigger than 0.0. Should be < 1.0 for capacity reduction and > 1.0 for increase." +
 		"The default is set to 0.5.", defaultValue = "0.5")
@@ -36,6 +36,11 @@ public class OpenBerlinRoadCapacitiesScenario extends OpenBerlinScenario {
 		super.prepareConfig(config);
 		//		we do not want to set changed road capacities via qsim cfg group because this would affect all links.
 //		the network of this model includes the whole of Brandenburg.
+
+		if (relativeCapacityChange == 0.0) {
+			log.fatal("You tried to set a relative road capacity change of {}. This results in road capacities of 0 veh/h, which is invalid. Aborting!", relativeCapacityChange);
+			throw new IllegalStateException("");
+		}
 
 		return config;
 	}
@@ -50,7 +55,7 @@ public class OpenBerlinRoadCapacitiesScenario extends OpenBerlinScenario {
 		AtomicInteger count = new AtomicInteger(0);
 
 		if (relativeCapacityChange != 1.0) {
-			log.info("Link capacity will be set to {} instead of default {} for relevant links (within privded shape file and car as an allowed mode).",
+			log.info("Link capacity will be set to {} instead of default {} for relevant links (within provided shape file and car as an allowed mode).",
 				scenario.getConfig().qsim().getFlowCapFactor() * relativeCapacityChange, scenario.getConfig().qsim().getFlowCapFactor());
 
 //		filter links for links inside of shape and link with car as allowed mode. The latter excludes cycleways and pt links.

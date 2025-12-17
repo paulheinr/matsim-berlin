@@ -122,6 +122,8 @@ public class OpenBerlinScenario extends MATSimApplication {
 				.setSubpopulation("person")
 		);
 
+		config.scoring().setWriteExperiencedPlans(true);
+
 		// Need to switch to warning for best score
 		if (planSelector.equals(DefaultPlanStrategiesModule.DefaultSelector.BestScore)) {
 			config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.warn);

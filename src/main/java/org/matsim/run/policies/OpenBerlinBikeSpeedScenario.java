@@ -29,6 +29,11 @@ public class OpenBerlinBikeSpeedScenario extends OpenBerlinScenario {
 		//		apply all config changes from base scenario class
 		super.prepareConfig(config);
 
+		if (maxBikeSpeedKmH == 0.0) {
+			log.fatal("You tried to set the maximum bike speed to {}. It is invalid. Aborting!", maxBikeSpeedKmH);
+			throw new IllegalStateException("");
+		}
+
 //		bike is teleported, but routed on the network in berlin 6.4
 //		this means that there are no teleported mode params for bike. bike speed is set via vehicleType or freespeed
 		if (config.routing().getTeleportedModeParams().get(TransportMode.bike) != null) {
