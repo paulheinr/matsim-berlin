@@ -46,10 +46,12 @@ public class OpenBerlinDrtEstimatorScenario extends OpenBerlinDrtScenario {
 	@CommandLine.Option(names = "--wt-std", description = "waiting time standard deviation", defaultValue = "0.3")
 	protected double waitTimeStd;
 
-	@CommandLine.Option(names = "--ride-time-alpha", description = "ride time estimator alpha", defaultValue = "1.25")
+	//		ride time alpha + beta for pooled drt service from below paper. See Table 1.
+	//	https://api-depositonce.tu-berlin.de/server/api/core/bitstreams/82f8e8b5-7c7c-4bf2-a636-5b8b1ab7fe1d/content
+	@CommandLine.Option(names = "--ride-time-alpha", description = "ride time estimator alpha", defaultValue = "1.5")
 	protected double rideTimeAlpha;
 
-	@CommandLine.Option(names = "--ride-time-beta", description = "ride time estimator beta", defaultValue = "150")
+	@CommandLine.Option(names = "--ride-time-beta", description = "ride time estimator beta", defaultValue = "360")
 	protected double rideTimeBeta;
 
 	@CommandLine.Option(names = "--ride-time-std", description = "ride duration standard deviation", defaultValue = "0.3")
