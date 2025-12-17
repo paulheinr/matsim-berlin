@@ -224,7 +224,6 @@ public class OpenBerlinDrtScenario extends OpenBerlinScenario {
 		Set<String> drtModes = new HashSet<>();
 
 		ScoringConfigGroup.ModeParams ptParams = config.scoring().getModes().get(TransportMode.pt);
-		IntermodalTripFareCompensatorsConfigGroup compensatorsConfig = ConfigUtils.addOrGetModule(config, IntermodalTripFareCompensatorsConfigGroup.class);
 
 		for (DrtConfigGroup drtCfg : multiModeDrtCfg.getModalElements()) {
 			drtModes.add(drtCfg.getMode());
@@ -242,15 +241,7 @@ public class OpenBerlinDrtScenario extends OpenBerlinScenario {
 			config.scoring().addModeParams(modeParams);
 		}
 
-		//assume that (all) the drt is fully integrated in pt, i.e. fare integration
-		IntermodalTripFareCompensatorConfigGroup drtCompensationCfg = new IntermodalTripFareCompensatorConfigGroup();
-		drtCompensationCfg.setCompensationCondition(IntermodalTripFareCompensatorConfigGroup.CompensationCondition.PtModeUsedAnywhereInTheDay);
-		drtCompensationCfg.setCompensationMoneyPerDay(ptParams.getDailyMonetaryConstant());
-		drtCompensationCfg.setNonPtModes(ImmutableSet
-			.<String>builder()
-			.addAll(drtModes)
-			.build());
-		compensatorsConfig.addParameterSet(drtCompensationCfg);
+		configureIntermodalTripFareCompensation(config, ptParams, drtModes);
 
 		//include drt in mode-choice and add mode params.
 		//by using a Set, it should be assured that they aren't included twice.
@@ -312,8 +303,32 @@ public class OpenBerlinDrtScenario extends OpenBerlinScenario {
 		});
 
 		// yyyy there is fareSModule (with S) in config. ?!?!  kai, jul'19
-		controler.addOverridingModule(new IntermodalTripFareCompensatorsModule());
+		addIntermodalTripFareCompensatorsModule(controler);
 		controler.addOverridingModule(new PtIntermodalRoutingModesModule());
+	}
+
+	/**
+	 * overridable method to activate Intermodal trip fare compensation for pt-drt e.g.
+	 */
+	public void addIntermodalTripFareCompensatorsModule(Controler controler) {
+		controler.addOverridingModule(new IntermodalTripFareCompensatorsModule());
+	}
+
+	/**
+	 * overridable method to implement custom PtFareModules in policy scenarios.
+	 */
+	public void configureIntermodalTripFareCompensation(Config config, ScoringConfigGroup.ModeParams ptParams, Set<String> drtModes) {
+		IntermodalTripFareCompensatorsConfigGroup compensatorsConfig = ConfigUtils.addOrGetModule(config, IntermodalTripFareCompensatorsConfigGroup.class);
+
+		//assume that (all) the drt is fully integrated in pt, i.e. fare integration
+		IntermodalTripFareCompensatorConfigGroup drtCompensationCfg = new IntermodalTripFareCompensatorConfigGroup();
+		drtCompensationCfg.setCompensationCondition(IntermodalTripFareCompensatorConfigGroup.CompensationCondition.PtModeUsedAnywhereInTheDay);
+		drtCompensationCfg.setCompensationMoneyPerDay(ptParams.getDailyMonetaryConstant());
+		drtCompensationCfg.setNonPtModes(ImmutableSet
+			.<String>builder()
+			.addAll(drtModes)
+			.build());
+		compensatorsConfig.addParameterSet(drtCompensationCfg);
 	}
 
 
