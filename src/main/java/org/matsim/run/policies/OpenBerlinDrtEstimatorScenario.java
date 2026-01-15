@@ -74,6 +74,11 @@ public class OpenBerlinDrtEstimatorScenario extends OpenBerlinDrtScenario {
 		config.controller().setOutputDirectory(config.controller().getOutputDirectory() + "-alpha-" + rideTimeAlpha + "-beta-" + rideTimeBeta + "-fare-" + drtFare);
 		config.controller().setRunId(config.controller().getRunId() + "-alpha-" + rideTimeAlpha + "-beta-" + rideTimeBeta + "-fare-" + drtFare);
 
+//		adapt dailyMonetaryConstant to param drtFare if drtFare != dailyMonetaryConstantPT
+		if (drtFare != config.scoring().getModes().get(TransportMode.pt).getDailyMonetaryConstant()) {
+			config.scoring().getModes().get(TransportMode.drt).setDailyMonetaryConstant(drtFare);
+		}
+
 		MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
 
 //		we want to estimate drt, so we do not need the pre-defined vehicles file
@@ -176,7 +181,8 @@ public class OpenBerlinDrtEstimatorScenario extends OpenBerlinDrtScenario {
 			//assume that (all) the drt is fully integrated in pt, i.e. fare integration
 			IntermodalTripFareCompensatorConfigGroup drtCompensationCfg = new IntermodalTripFareCompensatorConfigGroup();
 			drtCompensationCfg.setCompensationCondition(IntermodalTripFareCompensatorConfigGroup.CompensationCondition.PtModeUsedAnywhereInTheDay);
-			drtCompensationCfg.setCompensationMoneyPerDay(drtFare);
+//			drtFare is negative, so compensation is -1 * drtFare
+			drtCompensationCfg.setCompensationMoneyPerDay(-1 * drtFare);
 			drtCompensationCfg.setNonPtModes(ImmutableSet
 				.<String>builder()
 				.addAll(drtModes)
