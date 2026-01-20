@@ -28,10 +28,12 @@ public class AddPersonSpecifcAscsStreamReading implements MATSimAppCommand {
 	private String outputPopulationPath;
 	@CommandLine.Option(names = "--sigma-values", description = "Sigma values for uniform distribution per mode. Format: Key=value, pairs separated by comma. Needs to be in same order as --modes. " +
 		"Distribution is: y = (randomDouble[0,1] - 0.5) * 2 * sigma + mean.",
+		split = ",",
 		defaultValue = TransportMode.bike + "=3.0")
 	private Map<String, Double> sigmaPerMode;
 	@CommandLine.Option(names = "--mean-values", description = "Mean values for uniform distribution per mode. Format: Key=value, pairs separated by comma. Needs to be in same order as --modes. " +
 		"Distribution is: y = (randomDouble[0,1] - 0.5) * 2 * sigma + mean.",
+		split = ",",
 		defaultValue = TransportMode.bike + "=0.0")
 	private Map<String, Double> meanPerMode;
 
