@@ -24,6 +24,7 @@ import org.matsim.core.config.groups.ScoringConfigGroup;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.utils.geometry.geotools.MGC;
+import org.matsim.run.OpenBerlinScenario;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
@@ -32,7 +33,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class RunAutofreiPolicy extends OpenBerlinScenarioContinued {
+public class RunAutofreiPolicy extends OpenBerlinScenario {
 	private static final Logger log = LogManager.getLogger(RunAutofreiPolicy.class);
 	private static final Set<String> RESTRICTED_MODES = Set.of(TransportMode.car, TransportMode.ride);
 	private static final String NEW_MODE_SMALL_SCALE_COMMERCIAL = "commercial_car";
