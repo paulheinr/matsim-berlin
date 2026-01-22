@@ -14,6 +14,7 @@ import org.matsim.core.events.EventsUtils;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.run.policies.autofrei.RunAutofreiPolicy;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -26,7 +27,7 @@ public class ParkingAnalyzer {
 		run(events, networkPath, output);
 	}
 
-	private static void run(String events, String networkPath, String output) {
+	public static void run(String events, String networkPath, String output) {
 		EventsManager eventsManager = EventsUtils.createEventsManager();
 		Set<String> modes = Set.of(TransportMode.car, TransportMode.truck, "freight", RunAutofreiPolicy.NEW_MODE_SMALL_SCALE_COMMERCIAL);
 
@@ -132,32 +133,51 @@ public class ParkingAnalyzer {
 		}
 
 		void writeCsv(Path file, Network network) {
-//			var header = List.of("linkId", "from_time", "to_time", "length", "occupancy", "initial");
-//			var rows = new ArrayList<List<String>>();
-//			for (var entry : occupancyChangeByLink.entrySet()) {
-//				Id<Link> linkId = entry.getKey();
-//
-//				OccupancyEntry max = entry.getValue().stream().max(Comparator.comparing(OccupancyEntry::occupancy)).orElseThrow();
-//				var row = List.of(
-//					linkId.toString(),
-//					String.valueOf(max.fromTime()),
-//					String.valueOf(max.toTime()),
-//					String.valueOf(network.getLinks().get(linkId).getLength()),
-//					String.valueOf(max.occupancy()),
-//					String.valueOf(initial.getOrDefault(linkId, -1))
-//				);
-//				rows.add(row);
-//			}
-//
-//			// Use Apache Commons CSV to write the file
-//			try (var writer = java.nio.file.Files.newBufferedWriter(file);
-//				 var csvPrinter = org.apache.commons.csv.CSVFormat.DEFAULT.builder().setHeader(header.toArray(new String[0])).build().print(writer)) {
-//				for (var row : rows) {
-//					csvPrinter.printRecord(row);
-//				}
-//			} catch (IOException e) {
-//				throw new RuntimeException(e);
-//			}
+			var header = List.of("linkId", "from_time", "to_time", "length", "occupancy", "initial");
+			var rows = new ArrayList<List<String>>();
+			for (var entry : occupancyChangeByLink.entrySet()) {
+				Id<Link> linkId = entry.getKey();
+
+				List<OccupancyChange> changes = entry.getValue();
+
+				OccupancyEntry max = convert(changes).stream().max(Comparator.comparing(OccupancyEntry::occupancy)).orElseThrow();
+				var row = List.of(
+					linkId.toString(),
+					String.valueOf(max.fromTime()),
+					String.valueOf(max.toTime()),
+					String.valueOf(network.getLinks().get(linkId).getLength()),
+					String.valueOf(max.occupancy()),
+					String.valueOf(initial.getOrDefault(linkId, -1.))
+				);
+				rows.add(row);
+			}
+
+			// Use Apache Commons CSV to write the file
+			try (var writer = java.nio.file.Files.newBufferedWriter(file);
+				 var csvPrinter = org.apache.commons.csv.CSVFormat.DEFAULT.builder().setHeader(header.toArray(new String[0])).build().print(writer)) {
+				for (var row : rows) {
+					csvPrinter.printRecord(row);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		static List<OccupancyEntry> convert(List<OccupancyChange> occupancyChanges) {
+			List<OccupancyEntry> entries = new ArrayList<>();
+			occupancyChanges.sort(Comparator.comparingDouble(OccupancyChange::time));
+			double currentOccupancy = 0.;
+			double lastTime = 0.;
+
+			for (OccupancyChange change : occupancyChanges) {
+				// in case of time 0, only the occupancy is added and no entry is created
+				if (change.time() > lastTime) {
+					entries.add(new OccupancyEntry(lastTime, change.time(), currentOccupancy));
+					lastTime = change.time();
+				}
+				currentOccupancy += change.change();
+			}
+			return entries;
 		}
 	}
 
