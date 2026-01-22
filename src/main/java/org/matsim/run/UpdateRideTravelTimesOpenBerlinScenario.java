@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario {
@@ -67,13 +68,12 @@ public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario 
 
 				for (TripStructureUtils.Trip t : TripStructureUtils.getTrips(plan)) {
 					String mode = TripStructureUtils.identifyMainMode(t.getTripElements());
+					timeTracker.addActivity(t.getOriginActivity());
 
 					if (!mode.equals(TransportMode.ride)) {
 						timeTracker.addElements(t.getTripElements());
 						continue;
 					}
-
-					timeTracker.addActivity(t.getOriginActivity());
 
 					List<PlanElement> newTrip = new ArrayList<>(t.getTripElements().size());
 					for (PlanElement tripElement : t.getTripElements()) {
@@ -86,7 +86,11 @@ public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario 
 								// Recalculate travel time for ride leg
 								double totalTravelTime = 0.0;
 								NetworkRoute route = (NetworkRoute) leg.getRoute();
-								for (Id<Link> linkId : route.getLinkIds()) {
+								// we omit the first link on purpose
+								List<Id<Link>> linkIds = new LinkedList<>(route.getLinkIds());
+								// add last link as this is not part of getLinkIds()
+								linkIds.add(leg.getRoute().getEndLinkId());
+								for (Id<Link> linkId : linkIds) {
 									VehicleType rideVehicleType = scenario.getVehicles().getVehicleTypes().get(Id.create("ride", VehicleType.class));
 									Vehicle rideVehicle = scenario.getVehicles().getFactory().createVehicle(Id.createVehicleId("ride"), rideVehicleType);
 									totalTravelTime += travelTimeCalculator.getLinkTravelTimes().getLinkTravelTime(scenario.getNetwork().getLinks().get(linkId), timeTracker.getTime().seconds(), person, rideVehicle);
@@ -98,7 +102,6 @@ public class UpdateRideTravelTimesOpenBerlinScenario extends OpenBerlinScenario 
 						}
 					}
 
-					timeTracker.addActivity(t.getDestinationActivity());
 					TripRouter.insertTrip(plan, t.getOriginActivity(), newTrip, t.getDestinationActivity());
 				}
 			}
