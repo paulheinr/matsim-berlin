@@ -36,7 +36,7 @@ import java.util.Set;
 public class RunAutofreiPolicy extends OpenBerlinScenario {
 	private static final Logger log = LogManager.getLogger(RunAutofreiPolicy.class);
 	private static final Set<String> RESTRICTED_MODES = Set.of(TransportMode.car, TransportMode.ride);
-	private static final String NEW_MODE_SMALL_SCALE_COMMERCIAL = "commercial_car";
+	public static final String NEW_MODE_SMALL_SCALE_COMMERCIAL = "commercial_car";
 
 	public static void main(String[] args) {
 		MATSimApplication.run(RunAutofreiPolicy.class, args);
