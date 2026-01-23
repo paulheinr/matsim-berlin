@@ -306,6 +306,95 @@ class ParkingAnalyzerTest {
 		}
 	}
 
+	@Test
+	void occupancyCalculation_empty() {
+		List<ParkingAnalyzer.OccupancyEntry> occupancyEntriesInTimeBin = ParkingAnalyzer.getOccupancyEntriesInTimeBin(0, 200, List.of());
+		Assertions.assertEquals(List.of(), occupancyEntriesInTimeBin);
+	}
+
+	@Test
+	void occupancyCalculation_oneOccupancyEntry_fullyIncluded() {
+		List<ParkingAnalyzer.OccupancyEntry> occupancyEntriesInTimeBin = ParkingAnalyzer.getOccupancyEntriesInTimeBin(0, 200, List.of(new ParkingAnalyzer.OccupancyEntry(1, 199, 42)));
+		Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(1, 199, 42)), occupancyEntriesInTimeBin);
+	}
+
+	@Test
+	void occupancyCalculation_oneOccupancyEntry_overlapsFrom() {
+		// Entry starts before 'from', ends within [from, to] → shrunk to start at 'from'
+		// Time bin: [100, 300], Entry: [50, 200] → Expected: [100, 200]
+		List<ParkingAnalyzer.OccupancyEntry> result = ParkingAnalyzer.getOccupancyEntriesInTimeBin(100, 300,
+			List.of(new ParkingAnalyzer.OccupancyEntry(50, 200, 5)));
+		Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(100, 200, 5)), result);
+	}
+
+	@Test
+	void occupancyCalculation_oneOccupancyEntry_overlapsTo() {
+		// Entry starts within [from, to], ends after 'to' → shrunk to end at 'to'
+		// Time bin: [100, 300], Entry: [200, 400] → Expected: [200, 300]
+		List<ParkingAnalyzer.OccupancyEntry> result = ParkingAnalyzer.getOccupancyEntriesInTimeBin(100, 300,
+			List.of(new ParkingAnalyzer.OccupancyEntry(200, 400, 7)));
+		Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(200, 300, 7)), result);
+	}
+
+	@Test
+	void occupancyCalculation_oneOccupancyEntry_overlapsCompletely() {
+		// Entry spans beyond both boundaries → shrunk to [from, to]
+		// Time bin: [100, 300], Entry: [50, 400] → Expected: [100, 300]
+		List<ParkingAnalyzer.OccupancyEntry> result = ParkingAnalyzer.getOccupancyEntriesInTimeBin(100, 300,
+			List.of(new ParkingAnalyzer.OccupancyEntry(50, 400, 10)));
+		Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(100, 300, 10)), result);
+	}
+
+	@Test
+	void occupancyCalculation_oneOccupancyEntry_completelyBefore() {
+		// Entry ends at or before 'from' → excluded
+		// Time bin: [100, 300], Entry: [0, 100] → Expected: empty (toTime <= from)
+		List<ParkingAnalyzer.OccupancyEntry> result = ParkingAnalyzer.getOccupancyEntriesInTimeBin(100, 300,
+			List.of(new ParkingAnalyzer.OccupancyEntry(0, 100, 3)));
+		Assertions.assertEquals(List.of(), result);
+	}
+
+	@Test
+	void occupancyCalculation_oneOccupancyEntry_completelyAfter() {
+		// Entry starts at or after 'to' → excluded
+		// Time bin: [100, 300], Entry: [300, 400] → Expected: empty (fromTime >= to)
+		List<ParkingAnalyzer.OccupancyEntry> result = ParkingAnalyzer.getOccupancyEntriesInTimeBin(100, 300,
+			List.of(new ParkingAnalyzer.OccupancyEntry(300, 400, 4)));
+		Assertions.assertEquals(List.of(), result);
+	}
+
+	@Test
+	void occupancyCalculation_oneOccupancyEntry_exactMatch() {
+		// Entry exactly matches time bin boundaries
+		// Time bin: [100, 300], Entry: [100, 300] → Expected: [100, 300]
+		List<ParkingAnalyzer.OccupancyEntry> result = ParkingAnalyzer.getOccupancyEntriesInTimeBin(100, 300,
+			List.of(new ParkingAnalyzer.OccupancyEntry(100, 300, 8)));
+		Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(100, 300, 8)), result);
+	}
+
+	@Test
+	void occupancyCalculation_multipleEntries_mixedOverlaps() {
+		// Multiple entries: some excluded, some included, some shrunk
+		// Time bin: [100, 300]
+		// Entry 1: [0, 50] → excluded (completely before)
+		// Entry 2: [50, 150] → shrunk to [100, 150]
+		// Entry 3: [150, 200] → included as-is
+		// Entry 4: [250, 350] → shrunk to [250, 300]
+		// Entry 5: [400, 500] → excluded (completely after)
+		List<ParkingAnalyzer.OccupancyEntry> result = ParkingAnalyzer.getOccupancyEntriesInTimeBin(100, 300, List.of(
+			new ParkingAnalyzer.OccupancyEntry(0, 50, 1),
+			new ParkingAnalyzer.OccupancyEntry(50, 150, 2),
+			new ParkingAnalyzer.OccupancyEntry(150, 200, 3),
+			new ParkingAnalyzer.OccupancyEntry(250, 350, 4),
+			new ParkingAnalyzer.OccupancyEntry(400, 500, 5)
+		));
+		Assertions.assertEquals(List.of(
+			new ParkingAnalyzer.OccupancyEntry(100, 150, 2),
+			new ParkingAnalyzer.OccupancyEntry(150, 200, 3),
+			new ParkingAnalyzer.OccupancyEntry(250, 300, 4)
+		), result);
+	}
+
 	static class IntegrationTest {
 		@RegisterExtension
 		MatsimTestUtils matsim = new MatsimTestUtils();

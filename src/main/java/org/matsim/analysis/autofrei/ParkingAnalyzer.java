@@ -89,6 +89,11 @@ public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimList
 		List<OccupancyEntry> occupancyEntries = parkingEventHandler.getOccupancyEntriesByLink().getOrDefault(linkId, List.of());
 
 		// filter entries to only those that overlap with [from, to]
+		List<OccupancyEntry> list = getOccupancyEntriesInTimeBin(from, to, occupancyEntries);
+		return list;
+	}
+
+	static List<OccupancyEntry> getOccupancyEntriesInTimeBin(double from, double to, List<OccupancyEntry> occupancyEntries) {
 		List<OccupancyEntry> list = new ArrayList<>();
 		for (OccupancyEntry o : occupancyEntries) {
 			// there are 2 cases that we won't include: (1) entry is completely before 'from' and (2) entry is completely after 'to'

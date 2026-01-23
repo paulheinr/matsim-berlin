@@ -2,7 +2,6 @@ package org.matsim.run.deparking;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.analysis.autofrei.ParkingAnalyzer;
@@ -26,14 +25,20 @@ public class ParkingCostHistory implements IterationEndsListener {
 	private final int binCount;
 	private final ParkingAnalyzer parkingAnalyzer;
 	private final DeParkingApproach deParkingApproach;
+	private final Network network;
+	private final double sample;
+	private final double parkingSpotLength;
 
-	private ParkingCostHistory(Map<Id<Link>, Integer> linkIndexMap, double[][] costs, ParkingAnalyzer parkingAnalyzer, int binSizeInSeconds, DeParkingApproach deParkingApproach) {
+	private ParkingCostHistory(Map<Id<Link>, Integer> linkIndexMap, double[][] costs, ParkingAnalyzer parkingAnalyzer, int binSizeInSeconds, DeParkingApproach deParkingApproach, Network network, double sample, double parkingSpotLength) {
 		this.linkIndexMap.putAll(linkIndexMap);
 		this.costs = costs;
 		this.binSizeInSeconds = binSizeInSeconds;
 		this.binCount = costs[0].length;
 		this.parkingAnalyzer = parkingAnalyzer;
 		this.deParkingApproach = deParkingApproach;
+		this.network = network;
+		this.sample = sample;
+		this.parkingSpotLength = parkingSpotLength;
 	}
 
 	/// Returns the cost of parking at a given link at a given time in a given iteration.
@@ -53,10 +58,9 @@ public class ParkingCostHistory implements IterationEndsListener {
 			for (int bin = 0; bin < binCount; bin++) {
 				List<ParkingAnalyzer.OccupancyEntry> occupancies = parkingAnalyzer.occupancy(event.getIteration(), id, bin * binSizeInSeconds, (bin + 1) * binSizeInSeconds);
 				double weightedOccupancy = occupancies.stream().mapToDouble(o -> (o.toTime() - o.fromTime()) * o.occupancy()).sum() / binSizeInSeconds;
-
-				throw new NotImplementedException("Make occupancy relative to link capacity.");
-
-//				newCosts[linkIndex][bin] = deParkingApproach.newParkingCost(weightedOccupancy, costs[linkIndex][bin]);
+				double availableSpots = network.getLinks().get(id).getLength() / parkingSpotLength / sample;
+				double weightedRelativeOccupancy = weightedOccupancy / availableSpots;
+				newCosts[linkIndex][bin] = deParkingApproach.newParkingCost(weightedRelativeOccupancy, costs[linkIndex][bin]);
 			}
 		});
 
@@ -67,6 +71,7 @@ public class ParkingCostHistory implements IterationEndsListener {
 	public static class Factory implements Provider<ParkingCostHistory> {
 		private Map<Id<Link>, double[]> initialCosts = new HashMap<>();
 		private int binSizeInSeconds = 3600;
+		private double parkingSpotLength = 7.5;
 
 		@Inject
 		private Network network;
@@ -83,6 +88,12 @@ public class ParkingCostHistory implements IterationEndsListener {
 		public Factory(Map<Id<Link>, double[]> initialCosts, int binSizeInSeconds) {
 			this.initialCosts = initialCosts;
 			this.binSizeInSeconds = binSizeInSeconds;
+		}
+
+		public Factory(Map<Id<Link>, double[]> initialCosts, int binSizeInSeconds, double parkingSpotLength) {
+			this.initialCosts = initialCosts;
+			this.binSizeInSeconds = binSizeInSeconds;
+			this.parkingSpotLength = parkingSpotLength;
 		}
 
 		@Override
@@ -121,7 +132,7 @@ public class ParkingCostHistory implements IterationEndsListener {
 
 			log.info("Created a ParkingCostHistory with {} links and {} time bins.", network.getLinks().size(), binCount);
 
-			return new ParkingCostHistory(linkIndexMap, costs, parkingAnalyzer, binSizeInSeconds, deParkingApproach);
+			return new ParkingCostHistory(linkIndexMap, costs, parkingAnalyzer, binSizeInSeconds, deParkingApproach, network, config.qsim().getFlowCapFactor(), parkingSpotLength);
 		}
 	}
 }
