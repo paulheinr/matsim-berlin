@@ -1,6 +1,7 @@
 package org.matsim.analysis.autofrei;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -85,7 +86,7 @@ public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimList
 			throw new RuntimeException("Iteration " + iteration + " is out of order");
 		}
 
-		List<OccupancyEntry> occupancyEntries = parkingEventHandler.getOccupancyEntriesByLink().get(linkId);
+		List<OccupancyEntry> occupancyEntries = parkingEventHandler.getOccupancyEntriesByLink().getOrDefault(linkId, List.of());
 
 		// filter entries to only those that overlap with [from, to]
 		List<OccupancyEntry> list = new ArrayList<>();
@@ -156,6 +157,8 @@ public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimList
 		private final Set<String> parkingModes;
 		private final Map<String, Map<Id<Person>, Id<Link>>> lastParkingLinkByPersonAndMode = new HashMap<>(600000);
 
+		private boolean initialized = false;
+
 		public ParkingEventHandler(ParkingInitializerEventsHandler initializer, Set<String> parkingModes) {
 			this.parkingModes = parkingModes;
 			this.initializer = initializer;
@@ -223,21 +226,25 @@ public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimList
 			occupancyChangesByLink.clear();
 			lastParkingLinkByPersonAndMode.clear();
 			occupancyEntriesByLinkCache.clear();
+			initialized = false;
 		}
 
 		/// This function can only be called after all events have been read. If called before, the behavior is undefined.
 		Map<Id<Link>, List<OccupancyChange>> getOccupancyChangesByLink() {
-			initializer.getCountByLink().forEach((linkId, change) -> {
-				occupancyChangesByLink.putIfAbsent(linkId, new LinkedList<>());
-				var list = occupancyChangesByLink.get(linkId);
-				list.addFirst(new OccupancyChange(0, change));
-			});
-
+			if (!initialized) {
+				applyInitials();
+				initialized = true;
+			}
 			return occupancyChangesByLink;
 		}
 
 		/// This function can only be called after all events have been read. If called before, the behavior is undefined.
 		public Map<Id<Link>, List<OccupancyEntry>> getOccupancyEntriesByLink() {
+			if (!initialized) {
+				applyInitials();
+				initialized = true;
+			}
+
 			if (occupancyEntriesByLinkCache == null) {
 				//fill cache if needed
 				occupancyEntriesByLinkCache = new HashMap<>();
@@ -246,6 +253,14 @@ public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimList
 				}
 			}
 			return this.occupancyEntriesByLinkCache;
+		}
+
+		private void applyInitials() {
+			initializer.getCountByLink().forEach((linkId, change) -> {
+				occupancyChangesByLink.putIfAbsent(linkId, new LinkedList<>());
+				var list = occupancyChangesByLink.get(linkId);
+				list.addFirst(new OccupancyChange(0, change));
+			});
 		}
 
 		static List<OccupancyEntry> convert(List<OccupancyChange> occupancyChanges) {
@@ -264,6 +279,22 @@ public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimList
 			}
 			entries.add(new OccupancyEntry(lastTime, Double.POSITIVE_INFINITY, currentOccupancy));
 			return entries;
+		}
+
+		public static class Factory implements Provider<ParkingEventHandler> {
+			@Inject
+			private ParkingInitializerEventsHandler initializer;
+
+			private Set<String> parkingModes = Set.of(TransportMode.car, TransportMode.truck, "freight", RunAutofreiPolicy.NEW_MODE_SMALL_SCALE_COMMERCIAL);
+
+			public Factory(Set<String> parkingModes) {
+				this.parkingModes = parkingModes;
+			}
+
+			@Override
+			public ParkingEventHandler get() {
+				return new ParkingEventHandler(initializer, parkingModes);
+			}
 		}
 	}
 

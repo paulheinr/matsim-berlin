@@ -2,6 +2,7 @@ package org.matsim.run.deparking;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.analysis.autofrei.ParkingAnalyzer;
@@ -52,7 +53,10 @@ public class ParkingCostHistory implements IterationEndsListener {
 			for (int bin = 0; bin < binCount; bin++) {
 				List<ParkingAnalyzer.OccupancyEntry> occupancies = parkingAnalyzer.occupancy(event.getIteration(), id, bin * binSizeInSeconds, (bin + 1) * binSizeInSeconds);
 				double weightedOccupancy = occupancies.stream().mapToDouble(o -> (o.toTime() - o.fromTime()) * o.occupancy()).sum() / binSizeInSeconds;
-				newCosts[linkIndex][bin] = deParkingApproach.newParkingCost(weightedOccupancy, costs[linkIndex][bin]);
+
+				throw new NotImplementedException("Make occupancy relative to link capacity.");
+
+//				newCosts[linkIndex][bin] = deParkingApproach.newParkingCost(weightedOccupancy, costs[linkIndex][bin]);
 			}
 		});
 
@@ -76,14 +80,9 @@ public class ParkingCostHistory implements IterationEndsListener {
 		@Inject
 		private DeParkingApproach deParkingApproach;
 
-		public Factory setBinSizeInSeconds(int binSizeInSeconds) {
-			this.binSizeInSeconds = binSizeInSeconds;
-			return this;
-		}
-
-		public Factory setInitialCosts(Map<Id<Link>, double[]> initialCosts) {
+		public Factory(Map<Id<Link>, double[]> initialCosts, int binSizeInSeconds) {
 			this.initialCosts = initialCosts;
-			return this;
+			this.binSizeInSeconds = binSizeInSeconds;
 		}
 
 		@Override

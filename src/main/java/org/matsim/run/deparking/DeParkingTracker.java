@@ -43,9 +43,9 @@ import java.util.Set;
 /**
  * @author mrieser, jfbischoff (SBB)
  */
-public class MainModeParkingCostVehicleTracker implements ActivityStartEventHandler, VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
+public class DeParkingTracker implements ActivityStartEventHandler, VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
 
-	private final static Logger log = LogManager.getLogger(MainModeParkingCostVehicleTracker.class);
+	private final static Logger log = LogManager.getLogger(DeParkingTracker.class);
 	private final Map<Id<Vehicle>, ParkingInfo> parkingPerVehicle = new HashMap<>();
 	private final Map<Id<Person>, Id<Vehicle>> lastVehiclePerDriver = new HashMap<>();
 	private final String trackedMode;
@@ -59,7 +59,7 @@ public class MainModeParkingCostVehicleTracker implements ActivityStartEventHand
 	@Inject
 	ParkingCostHistory parkingCostHistory;
 
-	public MainModeParkingCostVehicleTracker(String mode, Set<String> untrackedActivities) {
+	public DeParkingTracker(String mode, Set<String> untrackedActivities) {
 		this.untrackedActivities = untrackedActivities;
 		this.trackedMode = mode;
 		this.purpose = mode + " parking cost";

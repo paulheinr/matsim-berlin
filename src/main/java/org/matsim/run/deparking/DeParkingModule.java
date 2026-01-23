@@ -18,18 +18,19 @@
 
 package org.matsim.run.deparking;
 
+import org.matsim.analysis.autofrei.ParkingAnalyzer;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.core.controler.AbstractModule;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * @author jfbischoff (SBB)
  */
-public class ParkingCostModule extends AbstractModule {
-	private final static List<String> PARKING_MODES = List.of(TransportMode.car, TransportMode.bike, TransportMode.truck, "freight");
+public class DeParkingModule extends AbstractModule {
+	private final static Set<String> PARKING_MODES = Set.of(TransportMode.car, TransportMode.truck, "freight");
 
 	@Override
 	public void install() {
@@ -41,10 +42,24 @@ public class ParkingCostModule extends AbstractModule {
 
 		for (String mode : PARKING_MODES) {
 			if (mainModes.contains(mode)) {
-				addEventHandlerBinding().toInstance(new MainModeParkingCostVehicleTracker(mode, Set.of()));
+				addEventHandlerBinding().toInstance(new DeParkingTracker(mode, Set.of()));
 			} else {
 				throw new RuntimeException("Mode " + mode + " not found in main modes: " + mainModes);
 			}
 		}
+
+		// Add parking analyzer and its event handlers
+		bind(ParkingAnalyzer.class).asEagerSingleton();
+		bind(ParkingAnalyzer.ParkingInitializerEventsHandler.class).toInstance(new ParkingAnalyzer.ParkingInitializerEventsHandler(PARKING_MODES));
+		addControlerListenerBinding().to(ParkingAnalyzer.class);
+		addEventHandlerBinding().to(ParkingAnalyzer.ParkingInitializerEventsHandler.class);
+
+		bind(ParkingAnalyzer.ParkingEventHandler.class).toProvider(new ParkingAnalyzer.ParkingEventHandler.Factory(PARKING_MODES)).asEagerSingleton();
+		addEventHandlerBinding().to(ParkingAnalyzer.ParkingEventHandler.class);
+
+		// Bind cost and approach
+		bind(ParkingCostHistory.class).toProvider(new ParkingCostHistory.Factory(Map.of(), 2 * 3600)).asEagerSingleton();
+
+		bind(DeParkingApproach.class).to(InverseLinearDeParkingApproach.class);
 	}
 }

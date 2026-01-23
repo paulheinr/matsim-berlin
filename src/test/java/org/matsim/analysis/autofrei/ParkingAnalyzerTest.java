@@ -1,22 +1,34 @@
 package org.matsim.analysis.autofrei;
 
-import org.apache.commons.lang.NotImplementedException;
+import com.google.inject.Injector;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
 import org.matsim.api.core.v01.events.VehicleLeavesTrafficEvent;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Node;
+import org.matsim.core.api.experimental.events.EventsManager;
+import org.matsim.core.config.Config;
+import org.matsim.core.config.ConfigUtils;
+import org.matsim.core.config.groups.VspExperimentalConfigGroup;
+import org.matsim.core.controler.Controller;
+import org.matsim.core.controler.ControllerUtils;
+import org.matsim.core.controler.OutputDirectoryHierarchy;
+import org.matsim.core.controler.events.AfterMobsimEvent;
+import org.matsim.core.controler.events.IterationStartsEvent;
+import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.scenario.ScenarioUtils;
+import org.matsim.run.deparking.DeParkingModule;
 import org.matsim.testcases.MatsimTestUtils;
 
 import java.util.List;
 import java.util.Map;
 
 class ParkingAnalyzerTest {
-	@RegisterExtension
-	MatsimTestUtils utils = new MatsimTestUtils();
-
 	// One person enters traffic on link 1 at time 0, leaves traffic on link 2 at time 1.0.
 	@Test
 	void onePerson() {
@@ -235,10 +247,116 @@ class ParkingAnalyzerTest {
 		}
 	}
 
+	// Tests that simultaneous arrival and departure on the same link are handled correctly.
+	@Test
+	void sameTimeEnterLeave() {
+		// p1 enters l1 at t=1
+		VehicleEntersTrafficEvent ve1 = new VehicleEntersTrafficEvent(1., Id.createPersonId("p1"), Id.createLinkId("1"), Id.createVehicleId("p1"), "car", 1.0);
+		// p1 leaves l2 at t=2, p2 enters l2 at t=2 (same time)
+		VehicleLeavesTrafficEvent vl1 = new VehicleLeavesTrafficEvent(2., Id.createPersonId("p1"), Id.createLinkId("2"), Id.createVehicleId("p1"), "car", 1.0);
+		VehicleEntersTrafficEvent ve2 = new VehicleEntersTrafficEvent(2., Id.createPersonId("p2"), Id.createLinkId("2"), Id.createVehicleId("p2"), "car", 1.0);
+		// p2 leaves l3 at t=3
+		VehicleLeavesTrafficEvent vl2 = new VehicleLeavesTrafficEvent(3., Id.createPersonId("p2"), Id.createLinkId("3"), Id.createVehicleId("p2"), "car", 1.0);
+
+		ParkingAnalyzer.ParkingEventHandler peh = ParkingAnalyzer.run((em) -> {
+			em.processEvent(ve1);
+			em.processEvent(vl1);
+			em.processEvent(ve2);
+			em.processEvent(vl2);
+		});
+
+		{
+			Map<Id<Link>, List<ParkingAnalyzer.OccupancyChange>> actual = peh.getOccupancyChangesByLink();
+			Map<Id<Link>, List<ParkingAnalyzer.OccupancyChange>> expected = Map.of(
+				Id.createLinkId("1"), List.of(
+					new ParkingAnalyzer.OccupancyChange(0., 1.),  // initial: 1 parked (p1)
+					new ParkingAnalyzer.OccupancyChange(1., -1)   // p1 departs
+				),
+				Id.createLinkId("2"), List.of(
+					new ParkingAnalyzer.OccupancyChange(0., 1.),  // initial: 1 parked (p2)
+					new ParkingAnalyzer.OccupancyChange(2., 1),   // p1 arrives
+					new ParkingAnalyzer.OccupancyChange(2., -1)   // p2 departs (same time as p1 arrives)
+				),
+				Id.createLinkId("3"), List.of(
+					new ParkingAnalyzer.OccupancyChange(3., 1)    // p2 arrives
+				)
+			);
+
+			Assertions.assertEquals(expected, actual);
+		}
+
+		{
+			Map<Id<Link>, List<ParkingAnalyzer.OccupancyEntry>> actual = peh.getOccupancyEntriesByLink();
+			Map<Id<Link>, List<ParkingAnalyzer.OccupancyEntry>> expected = Map.of(
+				Id.createLinkId("1"), List.of(
+					new ParkingAnalyzer.OccupancyEntry(0., 1., 1),   // initial: 1 parked
+					new ParkingAnalyzer.OccupancyEntry(1., Double.POSITIVE_INFINITY, 0)  // after p1 departs: 0
+				),
+				Id.createLinkId("2"), List.of(
+					new ParkingAnalyzer.OccupancyEntry(0., 2., 1),   // initial: 1 parked (p2)
+					new ParkingAnalyzer.OccupancyEntry(2., Double.POSITIVE_INFINITY, 1)  // p1 arrives (+1) and p2 departs (-1): net 0 change
+				),
+				Id.createLinkId("3"), List.of(
+					new ParkingAnalyzer.OccupancyEntry(0., 3., 0),   // initially: 0
+					new ParkingAnalyzer.OccupancyEntry(3., Double.POSITIVE_INFINITY, 1)  // after p2 arrives: 1
+				)
+			);
+
+			Assertions.assertEquals(expected, actual);
+		}
+	}
+
 	static class IntegrationTest {
+		@RegisterExtension
+		MatsimTestUtils matsim = new MatsimTestUtils();
+
 		@Test
 		void occupancyCalculation() {
-			throw new NotImplementedException();
+			Config config = ConfigUtils.loadConfig("input/v6.4/berlin-v6.4.config.xml");
+			config.controller().setOutputDirectory(matsim.getOutputDirectory());
+			config.controller().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+
+			// turn off. It complains about missing scoring types in config, but we are not scoring anything here.
+			config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.info);
+
+			// prepare network
+			Scenario scenario = ScenarioUtils.createScenario(config);
+			Node n1 = NetworkUtils.createAndAddNode(scenario.getNetwork(), Id.createNodeId("n1"), new Coord());
+			Node n2 = NetworkUtils.createAndAddNode(scenario.getNetwork(), Id.createNodeId("n2"), new Coord());
+			NetworkUtils.createAndAddLink(scenario.getNetwork(), Id.createLinkId("l1"), n1, n2, 0., 0., 0, 0.);
+
+			Controller controller = ControllerUtils.createController(scenario);
+			controller.addOverridingModule(new DeParkingModule());
+
+			Injector injector = controller.getInjector();
+
+			ParkingAnalyzer instance = injector.getInstance(ParkingAnalyzer.class);
+			EventsManager events = injector.getInstance(EventsManager.class);
+
+			// replay simulation
+			instance.notifyIterationStarts(new IterationStartsEvent(null, 0, false));
+
+			VehicleEntersTrafficEvent ve = new VehicleEntersTrafficEvent(1., Id.createPersonId("p"), Id.createLinkId("l1"), Id.createVehicleId("p"), "car", 1.0);
+			VehicleLeavesTrafficEvent vl = new VehicleLeavesTrafficEvent(1., Id.createPersonId("p"), Id.createLinkId("l2"), Id.createVehicleId("p"), "car", 1.0);
+			events.processEvent(ve);
+			events.processEvent(vl);
+
+			instance.notifyAfterMobsim(new AfterMobsimEvent(null, 0, false));
+
+			{
+				List<ParkingAnalyzer.OccupancyEntry> occupancy1 = instance.occupancy(0, Id.createLinkId("l1"), 0., 3600.);
+				List<ParkingAnalyzer.OccupancyEntry> occupancy2 = instance.occupancy(0, Id.createLinkId("l2"), 0., 3600.);
+
+				Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(0., 1., 1.), new ParkingAnalyzer.OccupancyEntry(1., 3600., 0.)), occupancy1);
+				Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(0., 1., 0.), new ParkingAnalyzer.OccupancyEntry(1., 3600., 1.)), occupancy2);
+			}
+
+			{
+				List<ParkingAnalyzer.OccupancyEntry> occupancy1 = instance.occupancy(0, Id.createLinkId("l1"), 3600., 3600. * 2);
+				List<ParkingAnalyzer.OccupancyEntry> occupancy2 = instance.occupancy(0, Id.createLinkId("l2"), 3600., 3600. * 2);
+				Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(3600., 7200., 0.)), occupancy1);
+				Assertions.assertEquals(List.of(new ParkingAnalyzer.OccupancyEntry(3600., 7200., 1.)), occupancy2);
+			}
 		}
 	}
 }
