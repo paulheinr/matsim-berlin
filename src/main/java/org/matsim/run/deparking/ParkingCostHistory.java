@@ -29,7 +29,8 @@ public class ParkingCostHistory implements IterationEndsListener {
 	private final double sample;
 	private final double parkingSpotLength;
 
-	private ParkingCostHistory(Map<Id<Link>, Integer> linkIndexMap, double[][] costs, ParkingAnalyzer parkingAnalyzer, int binSizeInSeconds, DeParkingApproach deParkingApproach, Network network, double sample, double parkingSpotLength) {
+	// package-private for testing
+	ParkingCostHistory(Map<Id<Link>, Integer> linkIndexMap, double[][] costs, ParkingAnalyzer parkingAnalyzer, int binSizeInSeconds, DeParkingApproach deParkingApproach, Network network, double sample, double parkingSpotLength) {
 		this.linkIndexMap.putAll(linkIndexMap);
 		this.costs = costs;
 		this.binSizeInSeconds = binSizeInSeconds;
