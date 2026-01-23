@@ -13,7 +13,9 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
+import org.matsim.core.controler.events.AfterMobsimEvent;
 import org.matsim.core.controler.events.IterationStartsEvent;
+import org.matsim.core.controler.listener.AfterMobsimListener;
 import org.matsim.core.controler.listener.IterationStartsListener;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.network.NetworkUtils;
@@ -24,7 +26,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class ParkingAnalyzer implements IterationStartsListener {
+public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimListener {
 	private static final Logger log = LogManager.getLogger(ParkingAnalyzer.class);
 
 	public static void main(String[] args) {
@@ -33,7 +35,7 @@ public class ParkingAnalyzer implements IterationStartsListener {
 		String output = "./assets/parking_occupancy_autofrei.csv";
 
 		ParkingEventHandler peh = run(events);
-		peh.writeCsv(Path.of(output), NetworkUtils.readNetwork(networkPath));
+		ParkingAnalyzer.writeCsv(Path.of(output), NetworkUtils.readNetwork(networkPath), peh.getOccupancyEntriesByLink());
 	}
 
 	// convenience method to run the parking analyzer standalone
@@ -44,13 +46,10 @@ public class ParkingAnalyzer implements IterationStartsListener {
 		ParkingInitializerEventsHandler initializer = new ParkingInitializerEventsHandler(modes);
 		eventsManager.addHandler(initializer);
 
-		readEvents.accept(eventsManager);
-		Map<Id<Link>, Double> initial = initializer.getCountByLink(-1);
+		ParkingEventHandler parkingHandler = new ParkingEventHandler(initializer, modes);
+		eventsManager.addHandler(parkingHandler);
 
-		EventsManager eventsManager1 = EventsUtils.createEventsManager();
-		ParkingEventHandler parkingHandler = new ParkingEventHandler(initial, modes);
-		eventsManager1.addHandler(parkingHandler);
-		readEvents.accept(eventsManager1);
+		readEvents.accept(eventsManager);
 
 		return parkingHandler;
 	}
@@ -61,6 +60,9 @@ public class ParkingAnalyzer implements IterationStartsListener {
 	}
 
 	private int iteration = -1;
+
+	// This lock is unlocked after the mobsim has run and all events have been processed. This is because the event handlers need to finish to get correct results.
+	private boolean lock = true;
 
 	@Inject
 	private EventsManager eventsManager;
@@ -73,12 +75,17 @@ public class ParkingAnalyzer implements IterationStartsListener {
 
 	/// Returns the occupancy of a link at a given time bin (from, to) in a given iteration. Both from and to are included.
 	public List<OccupancyEntry> occupancy(int iteration, Id<Link> linkId, double from, double to) {
+		if (lock) {
+			log.error("Occupancy requested during locked state (probably before or during mobsim). Returning NaN.");
+			throw new RuntimeException("ParkingAnalyzer is locked; occupancy data is not yet available.");
+		}
+
 		if (iteration != this.iteration) {
 			log.error("Requested occupancy for iteration {}, but current iteration is {}. Returning NaN.", iteration, this.iteration);
 			throw new RuntimeException("Iteration " + iteration + " is out of order");
 		}
 
-		List<OccupancyEntry> occupancyEntries = parkingEventHandler.getOccupancyEntriesByLink(initializer.getCountByLink(iteration)).get(linkId);
+		List<OccupancyEntry> occupancyEntries = parkingEventHandler.getOccupancyEntriesByLink().get(linkId);
 
 		// filter entries to only those that overlap with [from, to]
 		List<OccupancyEntry> list = new ArrayList<>();
@@ -103,19 +110,55 @@ public class ParkingAnalyzer implements IterationStartsListener {
 	@Override
 	public void notifyIterationStarts(IterationStartsEvent event) {
 		this.iteration = event.getIteration();
+		this.lock = true;
+	}
+
+	@Override
+	public void notifyAfterMobsim(AfterMobsimEvent event) {
+		this.lock = false;
+	}
+
+	static void writeCsv(Path file, Network network, Map<Id<Link>, List<OccupancyEntry>> occupancyEntries) {
+		var header = List.of("linkId", "from_time", "to_time", "length", "occupancy", "initial");
+		var rows = new ArrayList<List<String>>();
+
+		for (var entries : occupancyEntries.entrySet()) {
+			Id<Link> linkId = entries.getKey();
+
+			OccupancyEntry max = entries.getValue().stream().max(Comparator.comparing(OccupancyEntry::occupancy)).orElseThrow();
+			var row = List.of(
+				linkId.toString(),
+				String.valueOf(max.fromTime()),
+				String.valueOf(max.toTime()),
+				String.valueOf(network.getLinks().get(linkId).getLength()),
+				String.valueOf(max.occupancy()),
+				String.valueOf(entries.getValue().getFirst().occupancy)
+			);
+			rows.add(row);
+		}
+
+		// Use Apache Commons CSV to write the file
+		try (var writer = java.nio.file.Files.newBufferedWriter(file);
+			 var csvPrinter = org.apache.commons.csv.CSVFormat.DEFAULT.builder().setHeader(header.toArray(new String[0])).build().print(writer)) {
+			for (var row : rows) {
+				csvPrinter.printRecord(row);
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public static class ParkingEventHandler implements VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
-		private final Map<Id<Link>, Double> initial;
+		private final ParkingInitializerEventsHandler initializer;
 		private final Map<Id<Link>, List<OccupancyChange>> occupancyChangesByLink = new HashMap<>(600000);
 		private Map<Id<Link>, List<OccupancyEntry>> occupancyEntriesByLinkCache = null;
 
 		private final Set<String> parkingModes;
 		private final Map<String, Map<Id<Person>, Id<Link>>> lastParkingLinkByPersonAndMode = new HashMap<>(600000);
 
-		public ParkingEventHandler(Map<Id<Link>, Double> initial, Set<String> parkingModes) {
-			this.initial = initial;
+		public ParkingEventHandler(ParkingInitializerEventsHandler initializer, Set<String> parkingModes) {
 			this.parkingModes = parkingModes;
+			this.initializer = initializer;
 		}
 
 		@Override
@@ -132,18 +175,6 @@ public class ParkingAnalyzer implements IterationStartsListener {
 
 			occupancyChangesByLink.putIfAbsent(event.getLinkId(), new LinkedList<>());
 			var list = occupancyChangesByLink.get(event.getLinkId());
-			if (list.isEmpty()) {
-				// This Enter event is the first event for this link
-				// no occupancy known yet, use initial occupancy
-				Double initialOccupancy = initial.get(event.getLinkId());
-
-				if (initialOccupancy == null) {
-					throw new RuntimeException("Vehicle is leaving link " + event.getLinkId() + ", but no initial occupancy is known.");
-				}
-
-				list.add(new OccupancyChange(0, initialOccupancy));
-			}
-
 			list.add(new OccupancyChange(event.getTime(), -1.));
 
 			// We need to check mass conservation here. If a person leaves a link where he/she never parked, we need to remove the parking count at the last link.
@@ -178,12 +209,6 @@ public class ParkingAnalyzer implements IterationStartsListener {
 			// update history with initial occupancy if needed
 			occupancyChangesByLink.putIfAbsent(event.getLinkId(), new ArrayList<>());
 			var list = occupancyChangesByLink.get(event.getLinkId());
-			if (list.isEmpty()) {
-				// This Leave event is the first event for this link
-				// no occupancy known yet, use initial occupancy
-				Double initialOccupancy = initial.getOrDefault(event.getLinkId(), 0.); // we might have links with 0 initial occupancy => they are not in the map
-				list.add(new OccupancyChange(0, initialOccupancy));
-			}
 			list.add(new OccupancyChange(event.getTime(), 1.));
 
 			// track where this person last parked
@@ -192,43 +217,35 @@ public class ParkingAnalyzer implements IterationStartsListener {
 			linkByPerson.put(event.getPersonId(), event.getLinkId());
 		}
 
+		// This function is called at the beginning of each iteration before any other controller listener is called (i.e. before mobsim starts listener).
 		@Override
 		public void reset(int iteration) {
-			// reset initial
 			occupancyChangesByLink.clear();
 			lastParkingLinkByPersonAndMode.clear();
 			occupancyEntriesByLinkCache.clear();
 		}
 
-		void writeCsv(Path file, Network network) {
-			var header = List.of("linkId", "from_time", "to_time", "length", "occupancy", "initial");
-			var rows = new ArrayList<List<String>>();
-			for (var entry : occupancyChangesByLink.entrySet()) {
-				Id<Link> linkId = entry.getKey();
+		/// This function can only be called after all events have been read. If called before, the behavior is undefined.
+		Map<Id<Link>, List<OccupancyChange>> getOccupancyChangesByLink() {
+			initializer.getCountByLink().forEach((linkId, change) -> {
+				occupancyChangesByLink.putIfAbsent(linkId, new LinkedList<>());
+				var list = occupancyChangesByLink.get(linkId);
+				list.addFirst(new OccupancyChange(0, change));
+			});
 
-				List<OccupancyChange> changes = entry.getValue();
+			return occupancyChangesByLink;
+		}
 
-				OccupancyEntry max = convert(changes).stream().max(Comparator.comparing(OccupancyEntry::occupancy)).orElseThrow();
-				var row = List.of(
-					linkId.toString(),
-					String.valueOf(max.fromTime()),
-					String.valueOf(max.toTime()),
-					String.valueOf(network.getLinks().get(linkId).getLength()),
-					String.valueOf(max.occupancy()),
-					String.valueOf(initial.getOrDefault(linkId, -1.))
-				);
-				rows.add(row);
-			}
-
-			// Use Apache Commons CSV to write the file
-			try (var writer = java.nio.file.Files.newBufferedWriter(file);
-				 var csvPrinter = org.apache.commons.csv.CSVFormat.DEFAULT.builder().setHeader(header.toArray(new String[0])).build().print(writer)) {
-				for (var row : rows) {
-					csvPrinter.printRecord(row);
+		/// This function can only be called after all events have been read. If called before, the behavior is undefined.
+		public Map<Id<Link>, List<OccupancyEntry>> getOccupancyEntriesByLink() {
+			if (occupancyEntriesByLinkCache == null) {
+				//fill cache if needed
+				occupancyEntriesByLinkCache = new HashMap<>();
+				for (var entry : occupancyChangesByLink.entrySet()) {
+					occupancyEntriesByLinkCache.put(entry.getKey(), convert(entry.getValue()));
 				}
-			} catch (IOException e) {
-				throw new RuntimeException(e);
 			}
+			return this.occupancyEntriesByLinkCache;
 		}
 
 		static List<OccupancyEntry> convert(List<OccupancyChange> occupancyChanges) {
@@ -245,37 +262,16 @@ public class ParkingAnalyzer implements IterationStartsListener {
 				}
 				currentOccupancy += change.change();
 			}
+			entries.add(new OccupancyEntry(lastTime, Double.POSITIVE_INFINITY, currentOccupancy));
 			return entries;
-		}
-
-		Map<Id<Link>, List<OccupancyChange>> getOccupancyChangesByLink(Map<Id<Link>, Double> initial) {
-			initial.forEach((linkId, change) -> {
-				occupancyChangesByLink.putIfAbsent(linkId, new LinkedList<>());
-				var list = occupancyChangesByLink.get(linkId);
-				list.addFirst(new OccupancyChange(0, change));
-			});
-
-			return occupancyChangesByLink;
-		}
-
-		public Map<Id<Link>, List<OccupancyEntry>> getOccupancyEntriesByLink(Map<Id<Link>, Double> initial) {
-			if (occupancyEntriesByLinkCache == null) {
-				//fill cache if needed
-				occupancyEntriesByLinkCache = new HashMap<>();
-				for (var entry : occupancyChangesByLink.entrySet()) {
-					occupancyEntriesByLinkCache.put(entry.getKey(), convert(entry.getValue()));
-				}
-			}
-			return this.occupancyEntriesByLinkCache;
 		}
 	}
 
 	// This class is needed because we need to first determine the initial parking counts before we can track the parking events properly.
-	private static class ParkingInitializerEventsHandler implements VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
+	public static class ParkingInitializerEventsHandler implements VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
 		private final Map<Id<Link>, Double> countByLink = new HashMap<>(600000);
 		private final Map<String, Set<Id<Person>>> personsAlreadyTravelledByMode = new HashMap<>(600000);
 		private final Set<String> parkingModes;
-		private int iteration = -1;
 
 		public ParkingInitializerEventsHandler(Set<String> parkingModes) {
 			this.parkingModes = parkingModes;
@@ -332,15 +328,11 @@ public class ParkingAnalyzer implements IterationStartsListener {
 
 		@Override
 		public void reset(int iteration) {
-			this.iteration = iteration;
 			countByLink.clear();
 			personsAlreadyTravelledByMode.clear();
 		}
 
-		public Map<Id<Link>, Double> getCountByLink(int iteration) {
-			if (iteration != this.iteration) {
-				throw new IllegalStateException("Iteration " + iteration + " is out of order");
-			}
+		public Map<Id<Link>, Double> getCountByLink() {
 			return countByLink;
 		}
 	}
