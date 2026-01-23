@@ -22,7 +22,6 @@ package org.matsim.run.deparking;
 import com.google.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.matsim.analysis.autofrei.ParkingAnalyzer;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.ActivityStartEvent;
 import org.matsim.api.core.v01.events.PersonMoneyEvent;
@@ -52,12 +51,13 @@ public class MainModeParkingCostVehicleTracker implements ActivityStartEventHand
 	private final String trackedMode;
 	private final Set<String> untrackedActivities;
 	private final String purpose;
+
 	@Inject
 	EventsManager events;
 	@Inject
 	Network network;
 	@Inject
-	ParkingAnalyzer parkingAnalyzer;
+	ParkingCostHistory parkingCostHistory;
 
 	public MainModeParkingCostVehicleTracker(String mode, Set<String> untrackedActivities) {
 		this.untrackedActivities = untrackedActivities;
@@ -74,7 +74,7 @@ public class MainModeParkingCostVehicleTracker implements ActivityStartEventHand
 			}
 			Link link = network.getLinks().get(pi.parkingLinkId);
 			double parkDuration = event.getTime() - pi.startParkingTime;
-			double hourlyParkingCost = parkingCost();
+			double hourlyParkingCost = parkingCostHistory.cost(link.getId(), pi.startParkingTime);
 			double parkingCost = hourlyParkingCost * (parkDuration / 3600.0);
 			this.events.processEvent(new PersonMoneyEvent(event.getTime(), pi.driverId, -parkingCost, purpose, null, link.getId().toString()));
 		}
@@ -99,28 +99,12 @@ public class MainModeParkingCostVehicleTracker implements ActivityStartEventHand
 		}
 	}
 
-	private double parkingCost() {
-		// Placeholder for potential future use
-		// TODO
-		return 0.0;
-	}
-
 	@Override
 	public void reset(int iteration) {
 		this.parkingPerVehicle.clear();
 		this.lastVehiclePerDriver.clear();
 	}
 
-	private static class ParkingInfo {
-
-		final Id<Link> parkingLinkId;
-		final Id<Person> driverId;
-		final double startParkingTime;
-
-		ParkingInfo(Id<Link> parkingLinkId, Id<Person> driverId, double startParkingTime) {
-			this.parkingLinkId = parkingLinkId;
-			this.driverId = driverId;
-			this.startParkingTime = startParkingTime;
-		}
+	private record ParkingInfo(Id<Link> parkingLinkId, Id<Person> driverId, double startParkingTime) {
 	}
 }
