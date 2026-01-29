@@ -124,11 +124,15 @@ public class OpenBerlinDrtScenario extends OpenBerlinScenario {
 		}
 	}
 
-	private static void tagTransitStopsInServiceArea(TransitSchedule transitSchedule,
-													 String newAttributeName, String newAttributeValue,
-													 String drtServiceAreaShapeFile,
-													 String oldFilterAttribute, String oldFilterValue,
-													 double bufferAroundServiceArea) {
+	/**
+	 * used for tagging pt stops as intermodal.
+	 * public because we use the same method for drt and sharing scenarios.
+	 */
+	public static void tagTransitStopsInServiceArea(TransitSchedule transitSchedule,
+													String newAttributeName, String newAttributeValue,
+													String drtServiceAreaShapeFile,
+													String oldFilterAttribute, String oldFilterValue,
+													double bufferAroundServiceArea) {
 		log.info("Tagging pt stops marked for intermodal access/egress in the service area.");
 		ShpOptions shp = new ShpOptions(drtServiceAreaShapeFile, null, null);
 		List<Geometry> serviceAreas = new ArrayList<>();
