@@ -31,9 +31,9 @@ public class ParkingAnalyzer implements IterationStartsListener, AfterMobsimList
 	private static final Logger log = LogManager.getLogger(ParkingAnalyzer.class);
 
 	public static void main(String[] args) {
-		String events = "./assets/filtered_parking_autofrei.xml.gz";
-		String networkPath = "./assets/berlin-v6.4.output_network.xml.gz";
-		String output = "./assets/parking_occupancy_autofrei.csv";
+		String events = "./output/berlin-autofrei-v6.4-baseCaseCtd/berlin-v6.4.output_events.xml.gz";
+		String networkPath = "./output/berlin-autofrei-v6.4-baseCaseCtd/berlin-v6.4.output_network.xml.gz";
+		String output = "./output/berlin-autofrei-v6.4-baseCaseCtd/parking_occupancy_autofrei.csv";
 
 		ParkingEventHandler peh = run(events);
 		ParkingAnalyzer.writeCsv(Path.of(output), NetworkUtils.readNetwork(networkPath), peh.getOccupancyEntriesByLink());
