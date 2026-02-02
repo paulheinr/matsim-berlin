@@ -125,5 +125,12 @@ For more information about MATSim, see here: https://www.matsim.org/
 
 ## Internal documentation
 
+The above instructions are no longer correct.  Needs to be fixed. 
+The current approach to obtain the rakow-type command line approach is
+```
+java -cp matsim-berlin-....jar org.matsim.run.OpenBerlinScenario
+```
+Note that we want to change this such that calling the jar file generates that starting point.
+
 Internal documentation can be found here:
 https://docs.google.com/document/d/133CuXaMuWL0NcstyFHodk4y7J5yFLy9nrLtbBVpNWzM/edit?usp=drive_link
