@@ -7,6 +7,7 @@ import numpy as np
 
 from matsim.scenariogen.data import TripMode, read_all
 from matsim.scenariogen.data.preparation import fill, compute_economic_status, prepare_persons, create_activities
+# from matsim.scenariogen.data.preparation import fill, prepare_persons, create_activities
 
 if __name__ == "__main__":
 
@@ -23,6 +24,7 @@ if __name__ == "__main__":
 
     hh, persons, trips = read_all([args.directory + "Berlin+Umland", args.directory + "Brandenburg"],
                                       regio=args.regiostar)
+    # (read_all auto-senses if the files are in standard MiD or in standard SrV format, and then reads hhs, persons, trips.)
 
     # Motorcycles are counted as cars
     trips.loc[trips.main_mode == TripMode.MOTORCYCLE, "main_mode"] = TripMode.CAR
@@ -30,6 +32,7 @@ if __name__ == "__main__":
     # Impute missing values
     fill(hh, "income", -1)
     compute_economic_status(hh)
+    # (not available in my install (supposedly the newest) of matsim-tools)
 
     hh["income"] = hh.income / hh.equivalent_size
 
