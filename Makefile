@@ -6,6 +6,7 @@ CRS := EPSG:25832
 
 p := input/$V
 germany := ../shared-svn/projects/matsim-germany
+berlinShared := ../shared-svn/projects/matsim-berlin/data
 berlin := ../public-svn/matsim/scenarios/countries/de/berlin/berlin-$V
 
 MEMORY ?= 20G
@@ -50,10 +51,11 @@ input/ref_facilities.gpkg: input/facilities.osm.pbf
 	 --input $<\
 	 --output $@
 
-input/PLR_2013_2020.csv:
-	curl https://instantatlas.statistik-berlin-brandenburg.de/instantatlas/interaktivekarten/kommunalatlas/Kommunalatlas.zip --insecure -o atlas.zip
-	unzip atlas.zip -d input
-	rm atlas.zip
+$(berlinShared)/statistik-berlin-brandenburg/PLR_2013_2020.csv:
+	#curl https://instantatlas.statistik-berlin-brandenburg.de/instantatlas/interaktivekarten/kommunalatlas/Kommunalatlas.zip --insecure -o atlas.zip
+	#unzip atlas.zip -d input
+	#rm atlas.zip
+	echo "PLR_2013_2020.csv does no longer exist."
 # (Kommunalatlas = kleinräumiges Datenangebot.  "PLR" is the file name after expanding the zipfile; it may mean "Planungsraum".  Contains attributes of LOR zones (at 500 zones level).)
 # (link no longer active)
 
@@ -171,7 +173,7 @@ $p/berlin-$V-facilities.xml.gz: $p/berlin-$V-network.xml.gz input/facilities.gpk
 	 --zones-shp $(word 3,$^)\
 	 --output $@
 
-$p/berlin-only-$V-100pct.plans.xml.gz: input/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
+$p/berlin-only-$V-100pct.plans.xml.gz: $(berlinShared)/statistik-berlin-brandenburg/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
 	$(sc) prepare berlin-population\
 		--input $<\
 		--sample 1.0\
@@ -179,7 +181,7 @@ $p/berlin-only-$V-100pct.plans.xml.gz: input/PLR_2013_2020.csv $(berlin)/input/s
 		--facilities $(word 3,$^) --facilities-attr resident\
 		--output $@
 
-$p/berlin-only-$V-25pct.plans.xml.gz: input/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
+$p/berlin-only-$V-25pct.plans.xml.gz: $(berlinShared)/statistik-berlin-brandenburg/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
 	$(sc) prepare berlin-population\
 		--input $<\
 		--shp $(word 2,$^) --shp-crs EPSG:25833\
