@@ -1,4 +1,4 @@
-package org.matsim.utils;
+package org.matsim.run.gartenfeld;
 
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
@@ -65,4 +65,6 @@ public class GartenfeldUtils {
 	 * Helper enum to enable/disable functionalities.
 	 */
 	public enum FunctionalityHandling {ENABLED, DISABLED}
+	static void changeWrapAroundActsIntoMorningAndEveningActs( Scenario scenario ){
+	}
 }

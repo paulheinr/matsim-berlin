@@ -18,13 +18,12 @@ import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.MultimodalLinkChooserDefaultImpl;
 import org.matsim.run.OpenBerlinScenario;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
-import org.matsim.utils.GartenfeldUtils;
 import picocli.CommandLine;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.matsim.utils.GartenfeldUtils.prepareVehicleTypesForEmissionAnalysis;
+import static org.matsim.run.gartenfeld.GartenfeldUtils.prepareVehicleTypesForEmissionAnalysis;
 
 /**
  * Scenario class for Gartenfeld.
@@ -48,7 +47,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 	}
 
 	public static void main(String[] args) {
-		MATSimApplication.run(GartenfeldScenario.class, args);
+		MATSimApplication.execute(GartenfeldScenario.class, args);
 	}
 
 	public static GartenfeldUtils.FunctionalityHandling getExplicitWalkIntermodalityBaseCase() {
@@ -148,6 +147,8 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 
 //		add hbefa types to vehicle types
 		prepareVehicleTypesForEmissionAnalysis(scenario);
+
+		GartenfeldUtils.changeWrapAroundActsIntoMorningAndEveningActs( scenario );
 	}
 
 	@Override

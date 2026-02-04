@@ -38,7 +38,6 @@ import org.matsim.simwrapper.SimWrapperConfigGroup;
 import org.matsim.simwrapper.dashboard.EmissionsDashboard;
 import org.matsim.simwrapper.dashboard.NoiseDashboard;
 import org.matsim.simwrapper.dashboard.TripDashboard;
-import org.matsim.utils.GartenfeldUtils;
 import org.matsim.vehicles.MatsimVehicleWriter;
 import picocli.CommandLine;
 
@@ -48,7 +47,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.matsim.utils.GartenfeldUtils.prepareVehicleTypesForEmissionAnalysis;
+import static org.matsim.run.gartenfeld.GartenfeldUtils.prepareVehicleTypesForEmissionAnalysis;
 
 @CommandLine.Command(
 	name = "simwrapper",

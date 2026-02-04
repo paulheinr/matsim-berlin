@@ -33,7 +33,6 @@ import org.matsim.core.utils.gis.GeoFileWriter;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.pt.config.TransitRouterConfigGroup;
 import org.matsim.run.prepare.PrepareTransitSchedule;
-import org.matsim.utils.GartenfeldUtils;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleCapacity;
 import org.matsim.vehicles.VehicleType;
