@@ -43,6 +43,7 @@ import org.matsim.api.core.v01.population.PopulationFactory;
 import org.matsim.api.core.v01.population.PopulationWriter;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
+import org.matsim.core.population.PopulationUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.geometry.geotools.MGC;
 import org.matsim.core.utils.gis.ShapeFileReader;
@@ -190,7 +191,8 @@ public class CreateFreightAgents {
 			pers.addPlan(plan) ;
 			population.addPerson(pers) ;
 
-			scenario.getPopulation().getPersons().get(pers.getId()).getAttributes().putAttribute(scenario.getConfig().plans().getSubpopulationAttributeName(), "freight");
+//			scenario.getPopulation().getPersons().get(pers.getId()).getAttributes().putAttribute(scenario.getConfig().plans().getSubpopulationAttributeName(), "freight");
+			PopulationUtils.putSubpopulation( pers, "freight");
 
 			personCounter++;
 		}
@@ -224,7 +226,8 @@ public class CreateFreightAgents {
 			pers.addPlan(plan) ;
 			population.addPerson(pers) ;
 
-			scenario.getPopulation().getPersons().get(pers.getId()).getAttributes().putAttribute(scenario.getConfig().plans().getSubpopulationAttributeName(), "freight");
+//			scenario.getPopulation().getPersons().get(pers.getId()).getAttributes().putAttribute(scenario.getConfig().plans().getSubpopulationAttributeName(), "freight");
+			PopulationUtils.putSubpopulation( pers, "freight" );
 
 			personCounter++;
 		}

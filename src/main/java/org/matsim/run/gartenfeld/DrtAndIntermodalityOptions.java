@@ -141,7 +141,7 @@ public class DrtAndIntermodalityOptions {
 
 //			we need to configure walk-pt intermodality if it has not been done in base case.
 			if (GartenfeldScenario.getExplicitWalkIntermodalityBaseCase() == GartenfeldUtils.FunctionalityHandling.DISABLED) {
-				GartenfeldScenario.setExplicitIntermodalityParamsForWalkToPt(srrConfig);
+				GartenfeldUtils.setExplicitIntermodalityParamsForWalkToPt(srrConfig );
 			}
 //			add drt as access egress mode for pt
 			SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet accessEgressDrtParam = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();

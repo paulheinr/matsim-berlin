@@ -10,10 +10,10 @@
 <!--		<version>2026.0-PR4090</version>-->
 
 		<!--		weekly release:-->
-		<version>2026.0-2026w03</version>
+<!--		<version>2026.0-2026w03</version>-->
 
 		<!-- use ONLY for dependency sharing in the IDE: -->
-<!--		<version>2026.0-SNAPSHOT</version>-->
+		<version>2026.0-SNAPSHOT</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -58,16 +58,20 @@
 				<artifactId>commons-rng-simple</artifactId>
 				<version>1.6</version>
 			</dependency>
+
+<!--			The older versions below do not compile in mvn package because some version-out-of-bound error.  In general, versions should be managed further upstream.  kai, feb'26-->
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-statistics-distribution</artifactId>
-				<version>1.1</version>
+<!--				<version>1.1</version>-->
+				<version>1.2</version>
 			</dependency>
 			<!-- POI -->
 			<dependency>
 				<groupId>org.apache.poi</groupId>
 				<artifactId>poi-ooxml</artifactId>
-				<version>5.4.1</version>
+<!--				<version>5.4.1</version>-->
+				<version>5.5.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

@@ -113,8 +113,12 @@ public class GartenfeldEVScenario extends GartenfeldScenario {
 
 		StrategicChargingConfigGroup strategicChargingConfigGroup = ConfigUtils.addOrGetModule(config, StrategicChargingConfigGroup.class);
 		//TODO configure the StrategicChargingConfigGroup
+
 		//set the radius in which a person will search for a charger - pretty high for test purposes
-		strategicChargingConfigGroup.setChargerSearchRadius(3_000);
+//		strategicChargingConfigGroup.setChargerSearchRadius(3_000);
+		strategicChargingConfigGroup.setActivityBasedChargerSearchRadius( 3_000);
+		strategicChargingConfigGroup.setLegBasedChargerSearchRadius( 3_000);
+		// yyyy I do not know if these two things are the same.  kai, feb'26
 
 		//configure the scoring parameters for the strategic charging
 		ChargingPlanScoringParameters chargingScoringParameters = new ChargingPlanScoringParameters();

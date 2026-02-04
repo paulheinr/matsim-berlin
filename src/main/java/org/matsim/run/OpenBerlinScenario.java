@@ -13,7 +13,6 @@ import org.matsim.contrib.bicycle.BicycleConfigGroup;
 import org.matsim.contrib.bicycle.BicycleLinkSpeedCalculator;
 import org.matsim.contrib.bicycle.BicycleLinkSpeedCalculatorDefaultImpl;
 import org.matsim.contrib.bicycle.BicycleTravelTime;
-import org.matsim.contrib.emissions.HbefaRoadTypeMapping;
 import org.matsim.contrib.emissions.OsmHbefaMapping;
 import org.matsim.contrib.emissions.utils.EmissionsConfigGroup;
 import org.matsim.contrib.vsp.scoring.RideScoringParamsFromCarParams;
@@ -24,6 +23,7 @@ import org.matsim.core.config.groups.VspExperimentalConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
+import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule.DefaultStrategy;
 import org.matsim.core.router.costcalculators.OnlyTimeDependentTravelDisutilityFactory;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.router.util.TravelTime;
@@ -36,6 +36,8 @@ import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 
 import java.util.List;
+
+import static org.matsim.core.config.groups.ReplanningConfigGroup.*;
 
 @CommandLine.Command(header = ":: Open Berlin Scenario ::", version = OpenBerlinScenario.VERSION, mixinStandardHelpOptions = true, showDefaultValues = true)
 public class OpenBerlinScenario extends MATSimApplication {
@@ -78,7 +80,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 	@Override
 	protected Config prepareConfig(Config config) {
 
-		SimWrapperConfigGroup sw = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
+		SimWrapperConfigGroup simwrapperConfig = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
 
 		if (sample.isSet()) {
 			double sampleSize = sample.getSample();
@@ -88,7 +90,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 
 			// Counts can be scaled with sample size
 			config.counts().setCountsScaleFactor(sampleSize);
-			sw.setSampleSize(sampleSize);
+			simwrapperConfig.setSampleSize(sampleSize);
 
 			config.controller().setRunId(sample.adjustName(config.controller().getRunId()));
 			config.controller().setOutputDirectory(sample.adjustName(config.controller().getOutputDirectory()));
@@ -104,35 +106,13 @@ public class OpenBerlinScenario extends MATSimApplication {
 
 //		add all necessary replanning strategies for all subpops
 		// Required for all calibration strategies
-		for (String subpopulation : List.of(SUBPOP_PERSON, SUBPOP_FREIGHT, SUBPOP_GOODS, SUBPOP_COM_PERSON, SUBPOP_COM_PERSON_SERVICE)) {
-			config.replanning().addStrategySettings(
-				new ReplanningConfigGroup.StrategySettings()
-					.setStrategyName(planSelector)
-					.setWeight(1.0)
-					.setSubpopulation(subpopulation)
-			);
-
-			config.replanning().addStrategySettings(
-				new ReplanningConfigGroup.StrategySettings()
-					.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute)
-					.setWeight(0.15)
-					.setSubpopulation(subpopulation)
-			);
+		final ReplanningConfigGroup replanning = config.replanning();
+		for (String subpopulation : List.of(SUBPOP_PERSON, SUBPOP_FREIGHT, SUBPOP_GOODS, SUBPOP_COM_PERSON, SUBPOP_COM_PERSON_SERVICE )) {
+			replanning.addStrategySettings( new StrategySettings().setStrategyName(planSelector).setWeight(1.0).setSubpopulation(subpopulation) );
+			replanning.addStrategySettings( new StrategySettings().setStrategyName( DefaultStrategy.ReRoute ).setWeight(0.15).setSubpopulation(subpopulation) );
 		}
-
-		config.replanning().addStrategySettings(
-			new ReplanningConfigGroup.StrategySettings()
-				.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator)
-				.setWeight(0.15)
-				.setSubpopulation(SUBPOP_PERSON)
-		);
-
-		config.replanning().addStrategySettings(
-			new ReplanningConfigGroup.StrategySettings()
-				.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice)
-				.setWeight(0.15)
-				.setSubpopulation(SUBPOP_PERSON)
-		);
+		replanning.addStrategySettings( new StrategySettings().setStrategyName( DefaultStrategy.TimeAllocationMutator ).setWeight(0.15).setSubpopulation(SUBPOP_PERSON) );
+		replanning.addStrategySettings( new StrategySettings().setStrategyName( DefaultStrategy.SubtourModeChoice ).setWeight(0.15).setSubpopulation(SUBPOP_PERSON) );
 
 		// Need to switch to warning for best score
 		if (planSelector.equals(DefaultPlanStrategiesModule.DefaultSelector.BestScore)) {
@@ -151,6 +131,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 		eConfig.setHbefaTableConsistencyCheckingLevel(EmissionsConfigGroup.HbefaTableConsistencyCheckingLevel.consistent);
 		eConfig.setDetailedVsAverageLookupBehavior(EmissionsConfigGroup.DetailedVsAverageLookupBehavior.tryDetailedThenTechnologyAverageThenAverageTable);
 		eConfig.setEmissionsComputationMethod(EmissionsConfigGroup.EmissionsComputationMethod.StopAndGoFraction);
+		// (yy replace by chained setters once available)
 
 		return config;
 	}
@@ -166,17 +147,13 @@ public class OpenBerlinScenario extends MATSimApplication {
 	protected void prepareScenario(Scenario scenario) {
 
 		// add hbefa link attributes.
-		HbefaRoadTypeMapping roadTypeMapping = OsmHbefaMapping.build();
-		roadTypeMapping.addHbefaMappings(scenario.getNetwork());
+		OsmHbefaMapping.build().addHbefaMappings(scenario.getNetwork() );
 	}
 
 	@Override
 	protected void prepareControler(Controler controler) {
-
 		controler.addOverridingModule(new SimWrapperModule());
-
-		controler.addOverridingModule(new TravelTimeBinding());
-
+		controler.addOverridingModule(new BerlinTravelTimeBinding() );
 		controler.addOverridingModule(new QsimTimingModule());
 
 		// AdvancedScoring is specific to matsim-berlin!
@@ -199,27 +176,26 @@ public class OpenBerlinScenario extends MATSimApplication {
 	/**
 	 * Add travel time bindings for ride and freight modes, which are not actually network modes.
 	 */
-	public static final class TravelTimeBinding extends AbstractModule {
+	public static final class BerlinTravelTimeBinding extends AbstractModule {
 
 		private final boolean carOnly;
 
-		public TravelTimeBinding() {
+		public BerlinTravelTimeBinding() {
 			this.carOnly = false;
 		}
 
-		public TravelTimeBinding(boolean carOnly) {
+		public BerlinTravelTimeBinding( boolean carOnly ) {
 			this.carOnly = carOnly;
 		}
 
 		@Override
 		public void install() {
-			addTravelTimeBinding(TransportMode.ride).to(networkTravelTime());
+			addTravelTimeBinding(TransportMode.ride).to( carTravelTime() );
 			addTravelDisutilityFactoryBinding(TransportMode.ride).to(carTravelDisutilityFactoryKey());
 
 			if (!carOnly) {
 				addTravelTimeBinding("freight").to(Key.get(TravelTime.class, Names.named(TransportMode.truck)));
 				addTravelDisutilityFactoryBinding("freight").to(Key.get(TravelDisutilityFactory.class, Names.named(TransportMode.truck)));
-
 
 				bind(BicycleLinkSpeedCalculator.class).to(BicycleLinkSpeedCalculatorDefaultImpl.class);
 
