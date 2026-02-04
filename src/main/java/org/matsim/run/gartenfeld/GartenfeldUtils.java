@@ -146,7 +146,11 @@ public final class GartenfeldUtils {
 		log.info("Activity types of first activity in plans: {}", firstActTypes);
 		log.info("Activity types of last activity in plans: {}", lastActTypes);
 	}
-	public static void setExplicitIntermodalityParamsForWalkToPt( SwissRailRaptorConfigGroup srrConfig ) {
+
+	/**
+	 * Set explicit values for internodal access/egress by mode walk to/from pt.
+	 */
+	static void setExplicitIntermodalityParamsForWalkToPt( SwissRailRaptorConfigGroup srrConfig ) {
 		srrConfig.setUseIntermodalAccessEgress(true);
 		srrConfig.setIntermodalAccessEgressModeSelection(SwissRailRaptorConfigGroup.IntermodalAccessEgressModeSelection.CalcLeastCostModePerStop);
 

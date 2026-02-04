@@ -9,10 +9,7 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.application.MATSimApplication;
 import org.matsim.application.options.SampleOptions;
-import org.matsim.contrib.bicycle.BicycleConfigGroup;
-import org.matsim.contrib.bicycle.BicycleLinkSpeedCalculator;
-import org.matsim.contrib.bicycle.BicycleLinkSpeedCalculatorDefaultImpl;
-import org.matsim.contrib.bicycle.BicycleTravelTime;
+import org.matsim.contrib.bicycle.*;
 import org.matsim.contrib.emissions.OsmHbefaMapping;
 import org.matsim.contrib.emissions.utils.EmissionsConfigGroup;
 import org.matsim.contrib.vsp.scoring.RideScoringParamsFromCarParams;
@@ -198,6 +195,9 @@ public class OpenBerlinScenario extends MATSimApplication {
 				addTravelDisutilityFactoryBinding("freight").to(Key.get(TravelDisutilityFactory.class, Names.named(TransportMode.truck)));
 
 				bind(BicycleLinkSpeedCalculator.class).to(BicycleLinkSpeedCalculatorDefaultImpl.class);
+//				I do not know why the following binding is needed here, because BicycleParamsDefaultImpl is bound in BicycleModule, but the controller is complaining.
+//				so I added it here. -sm0226
+				bind(BicycleParams.class).to(BicycleParamsDefaultImpl.class);
 
 				// Bike should use free speed travel time
 				addTravelTimeBinding(TransportMode.bike).to(BicycleTravelTime.class);

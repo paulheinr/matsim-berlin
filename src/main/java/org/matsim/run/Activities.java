@@ -77,12 +77,19 @@ public enum Activities {
 				}
 		}
 
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_start").setTypicalDuration(3600));
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_end").setTypicalDuration(3600));
+		createActivityParamsForCommercialTraffic(config.scoring());
+		createActivityParamsForFreight(config.scoring());
 
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_start").setTypicalDuration(3600));
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_end").setTypicalDuration(3600));
+	}
 
+	private static void createActivityParamsForCommercialTraffic(ScoringConfigGroup scoringConfigGroup) {
+		scoringConfigGroup.addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_start").setTypicalDuration(3600));
+		scoringConfigGroup.addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_end").setTypicalDuration(3600));
+	}
+
+	private static void createActivityParamsForFreight(ScoringConfigGroup scoringConfigGroup) {
+		scoringConfigGroup.addActivityParams(new ScoringConfigGroup.ActivityParams("freight_start").setTypicalDuration(3600));
+		scoringConfigGroup.addActivityParams(new ScoringConfigGroup.ActivityParams("freight_end").setTypicalDuration(3600));
 	}
 
 	/**
@@ -104,32 +111,8 @@ public enum Activities {
 				}
 		}
 
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_start").setTypicalDuration(3600));
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_end").setTypicalDuration(3600));
-
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_start").setTypicalDuration(3600));
-		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_end").setTypicalDuration(3600));
-
-	}
-	public static void addScoringParamsMorningEvening(Config config, boolean splitTypes) {
-
-		for (Activities value : Activities.values()) {
-			// Default length if none is given
-			config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createMorningActivityType( value.name() ))).setTypicalDuration(6 * 3600));
-			config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createEveningActivityType( value.name() ))).setTypicalDuration(6 * 3600));
-
-			if (splitTypes)
-				for (long ii = 600; ii <= 97200; ii += 600) {
-					config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createMorningActivityType( value.name() ) + "_" + ii).setTypicalDuration(ii)));
-					config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createEveningActivityType( value.name() ) + "_" + ii).setTypicalDuration(ii)));
-				}
-		}
-
-//		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_start").setTypicalDuration(3600));
-//		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_end").setTypicalDuration(3600));
-//
-//		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_start").setTypicalDuration(3600));
-//		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_end").setTypicalDuration(3600));
+		createActivityParamsForCommercialTraffic(config.scoring());
+		createActivityParamsForFreight(config.scoring());
 
 	}
 

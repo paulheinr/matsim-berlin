@@ -56,7 +56,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		MATSimApplication.execute(GartenfeldScenario.class, args);
 	}
 
-	public static GartenfeldUtils.FunctionalityHandling getExplicitWalkIntermodalityBaseCase() {
+	static GartenfeldUtils.FunctionalityHandling getExplicitWalkIntermodalityBaseCase() {
 		return explicitWalkIntermodalityBaseCase;
 	}
 
@@ -95,10 +95,12 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		}
 
 		// I do not know what is set further upstream, but am overriding this here:
-		config.timeAllocationMutator().setLatestActivityEndTime( "48:00:00" );  // should be infinity, but that is not possible
+		// should be infinity, but that is not possible
+		config.timeAllocationMutator().setLatestActivityEndTime( "48:00:00" );
 		config.timeAllocationMutator().setAffectingDuration( false );
 		config.timeAllocationMutator().setMutateAroundInitialEndTimeOnly( false );
-		config.timeAllocationMutator().setMutationRange( 7200 ); // relatively large setting since presumably we will move activities a lot
+		// relatively large setting since presumably we will move activities a lot
+		config.timeAllocationMutator().setMutationRange( 7200 );
 
 		return config;
 	}

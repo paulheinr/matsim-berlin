@@ -10,10 +10,10 @@
 <!--		<version>2026.0-PR4090</version>-->
 
 		<!--		weekly release:-->
-<!--		<version>2026.0-2026w03</version>-->
+		<version>2026.0-2026w03</version>
 
 		<!-- use ONLY for dependency sharing in the IDE: -->
-		<version>2026.0-SNAPSHOT</version>
+<!--		<version>2026.0-SNAPSHOT</version>-->
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
