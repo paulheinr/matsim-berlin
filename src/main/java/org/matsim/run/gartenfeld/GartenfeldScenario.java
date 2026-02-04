@@ -148,6 +148,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 //		add hbefa types to vehicle types
 		prepareVehicleTypesForEmissionAnalysis(scenario);
 
+//		eliminate wrap-around scoring of activities by creating actType_morning and actType_evening for first and last act of the day
 		GartenfeldUtils.changeWrapAroundActsIntoMorningAndEveningActs( scenario );
 	}
 

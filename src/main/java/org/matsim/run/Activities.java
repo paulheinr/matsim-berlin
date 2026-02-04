@@ -69,15 +69,11 @@ public enum Activities {
 
 		for (Activities value : Activities.values()) {
 			// Default length if none is given
-			config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(value.name())).setTypicalDuration(6 * 3600));
-			config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createMorningActivityType( value.name() ))).setTypicalDuration(6 * 3600));
-			config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createEveningActivityType( value.name() ))).setTypicalDuration(6 * 3600));
+			config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(value.name())).setTypicalDuration(6 * 3600.));
 
 			if (splitTypes)
 				for (long ii = 600; ii <= 97200; ii += 600) {
 					config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(value.name() + "_" + ii).setTypicalDuration(ii)));
-					config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createMorningActivityType( value.name() ) + "_" + ii).setTypicalDuration(ii)));
-					config.scoring().addActivityParams(value.apply(new ScoringConfigGroup.ActivityParams(createEveningActivityType( value.name() ) + "_" + ii).setTypicalDuration(ii)));
 				}
 		}
 
@@ -88,11 +84,39 @@ public enum Activities {
 		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_end").setTypicalDuration(3600));
 
 	}
+
+	/**
+	 * Add required activity params for the scenario without opening times.
+	 */
+	public static void addScoringParamsWithoutOpeningTimes(Config config, boolean splitTypes) {
+//		without value.apply (like in method addScoringParams()), no opening and closing times will be applied.
+		for (Activities value : Activities.values()) {
+			// Default length if none is given
+			config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams(value.name()).setTypicalDuration(6 * 3600.));
+			config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams(createMorningActivityType( value.name() )).setTypicalDuration(6 * 3600.));
+			config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams(createEveningActivityType( value.name() )).setTypicalDuration(6 * 3600.));
+
+			if (splitTypes)
+				for (long ii = 600; ii <= 97200; ii += 600) {
+					config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams(value.name() + "_" + ii).setTypicalDuration(ii));
+					config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams(createMorningActivityType( value.name() ) + "_" + ii).setTypicalDuration(ii));
+					config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams(createEveningActivityType( value.name() ) + "_" + ii).setTypicalDuration(ii));
+				}
+		}
+
+		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_start").setTypicalDuration(3600));
+		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("commercial_end").setTypicalDuration(3600));
+
+		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_start").setTypicalDuration(3600));
+		config.scoring().addActivityParams(new ScoringConfigGroup.ActivityParams("freight_end").setTypicalDuration(3600));
+
+	}
+
 	public static String createMorningActivityType( String baseActType ) {
 		return baseActType + "_morning";
 	}
+
 	public static String createEveningActivityType( String baseActType ) {
 		return baseActType + "_evening";
 	}
-
 }

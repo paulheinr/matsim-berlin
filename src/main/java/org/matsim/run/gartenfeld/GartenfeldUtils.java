@@ -1,14 +1,27 @@
 package org.matsim.run.gartenfeld;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
+import org.matsim.api.core.v01.population.Activity;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Plan;
 import org.matsim.contrib.emissions.HbefaVehicleCategory;
+import org.matsim.run.Activities;
 import org.matsim.vehicles.EngineInformation;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
-public class GartenfeldUtils {
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * class with useful methods, which are applied in multiple classes. Thus centralized here.
+ */
+public final class GartenfeldUtils {
 	private static final String AVERAGE = "average";
+	private static final Logger log = LogManager.getLogger(GartenfeldUtils.class);
 
 	private GartenfeldUtils() {
 
@@ -17,7 +30,7 @@ public class GartenfeldUtils {
 	/**
 	 * Prepare vehicle types with necessary HBEFA information for emission analysis.
 	 */
-	public static void prepareVehicleTypesForEmissionAnalysis(Scenario scenario) {
+	static void prepareVehicleTypesForEmissionAnalysis(Scenario scenario) {
 		for (VehicleType type : scenario.getVehicles().getVehicleTypes().values()) {
 			EngineInformation engineInformation = type.getEngineInformation();
 
@@ -61,10 +74,83 @@ public class GartenfeldUtils {
 			.values().forEach(type -> VehicleUtils.setHbefaVehicleCategory(type.getEngineInformation(), HbefaVehicleCategory.NON_HBEFA_VEHICLE.toString()));
 	}
 
+	static void changeWrapAroundActsIntoMorningAndEveningActs(Scenario scenario) {
+		Set<String> firstActTypes = new HashSet<>();
+		Set<String> lastActTypes = new HashSet<>();
+
+		for (Person p : scenario.getPopulation().getPersons().values()) {
+			for (Plan plan : p.getPlans()) {
+				Activity first = (Activity) plan.getPlanElements().getFirst();
+				Activity last = (Activity) plan.getPlanElements().getLast();
+
+				String[] splitFirst = first.getType().split("_");
+
+				String typeFirst = splitFirst[0];
+				firstActTypes.add(typeFirst);
+
+				Double durationFirst = null;
+				if (first.getEndTime().isDefined()) {
+//					use act end time if defined
+					durationFirst = first.getEndTime().seconds();
+				}
+
+				if (durationFirst == null && first.getMaximumDuration().isDefined()) {
+					durationFirst = first.getMaximumDuration().seconds();
+				}
+
+				if (durationFirst == null) {
+					log.fatal("Neither duration nor end time is defined for activity {} of agent {}. This should not happen, aborting!", first, p.getId());
+					throw new IllegalStateException("");
+				}
+
+				int durationBin = getDurationBin(durationFirst);
+
+				first.setType(String.format("%s_%d", Activities.createMorningActivityType(typeFirst), durationBin));
+
+				String[] splitLast = last.getType().split("_");
+				String typeLast = splitLast[0];
+				lastActTypes.add(typeLast);
+
+//				duration bins of first and last act have to match
+				if (!splitFirst[1].equals(splitLast[1])) {
+					log.fatal("typical duration of first and last activity of person {} are not the same. This should not happen, aborting!", p.getId());
+					throw new IllegalStateException("");
+				}
+
+				if (!typeFirst.equals(typeLast)) {
+					log.warn("Types of first activity ({}) and last activity ({}) do not match.", typeFirst, typeLast);
+				}
+
+				double durationLast = Double.parseDouble(splitFirst[2]) - durationFirst;
+
+				last.setType(String.format("%s_%d", Activities.createEveningActivityType(typeLast), getDurationBin(durationLast)));
+				last.setMaximumDuration(durationLast);
+				last.setEndTimeUndefined();
+				last.setStartTimeUndefined();
+
+				log.info("Activity types of first activity in plans: {}", firstActTypes);
+				log.info("Activity types of last activity in plans: {}", lastActTypes);
+			}
+		}
+	}
+
+	private static int getDurationBin(Double duration) {
+		final int maxCategories = 86400 / 600;
+
+		int durationCategoryNr = (int) Math.round(duration / 600);
+
+		if (durationCategoryNr <= 0) {
+			durationCategoryNr = 1;
+		}
+
+		if (durationCategoryNr >= maxCategories) {
+			durationCategoryNr = maxCategories;
+		}
+		return durationCategoryNr * 600;
+	}
+
 	/**
 	 * Helper enum to enable/disable functionalities.
 	 */
-	public enum FunctionalityHandling {ENABLED, DISABLED}
-	static void changeWrapAroundActsIntoMorningAndEveningActs( Scenario scenario ){
-	}
+	enum FunctionalityHandling {ENABLED, DISABLED}
 }
