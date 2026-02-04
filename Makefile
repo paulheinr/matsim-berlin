@@ -5,9 +5,9 @@ V := v7.0
 CRS := EPSG:25832
 
 p := input/$V
-germany := ../shared-svn/projects/matsim-germany
-berlinShared := ../shared-svn/projects/matsim-berlin/data
-berlin := ../public-svn/matsim/scenarios/countries/de/berlin/berlin-$V
+germany := ../../../shared-svn/projects/matsim-germany
+berlinShared := ../../../shared-svn/projects/matsim-berlin/data
+berlin := ../../../public-svn/matsim/scenarios/countries/de/berlin/berlin-$V
 
 MEMORY ?= 20G
 REGIONS := brandenburg
