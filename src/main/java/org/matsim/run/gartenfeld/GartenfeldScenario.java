@@ -1,6 +1,8 @@
 package org.matsim.run.gartenfeld;
 
 import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -12,7 +14,8 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
-import org.matsim.core.controler.OutputDirectoryHierarchy;
+import org.matsim.core.controler.ControllerUtils;
+import org.matsim.core.controler.OutputDirectoryLogging;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.algorithms.ParallelPersonAlgorithmUtils;
 import org.matsim.core.router.MultimodalLinkChooser;
@@ -35,6 +38,10 @@ import static org.matsim.run.gartenfeld.GartenfeldUtils.prepareVehicleTypesForEm
  */
 public class GartenfeldScenario extends OpenBerlinScenario {
 
+	/**
+	 * @deprecated -- ich lasse das jetzt erstmal so, aber generell finde ich config-file-on-top-of-other-config-file nicht gut.  kai, feb'26
+	 */
+	@Deprecated // ich lasse das jetzt erstmal so, aber generell finde ich config-file-on-top-of-other-config-file nicht gut.  kai, feb'26
 	@CommandLine.Option(names = "--gartenfeld-config", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/gartenfeld-cutout-v6.4-10pct.config.xml")
 	private String gartenfeldConfig;
 
@@ -48,11 +55,37 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 	@CommandLine.Option(names = "--explicit-walk-intermodality", defaultValue = "ENABLED", description = "Define if explicit walk intermodality parameter to/from pt should be set or not (use default).")
 	static GartenfeldUtils.FunctionalityHandling explicitWalkIntermodalityBaseCase;
 
-	public GartenfeldScenario() {
-		super(String.format("input/v%s/berlin-v%s.config.xml", VERSION, VERSION));
-	}
+//	public GartenfeldScenario() {
+//		super(String.format("input/v%s/berlin-v%s.config.xml", VERSION, VERSION));
+//	}
 
 	public static void main(String[] args) {
+		OutputDirectoryLogging.catchLogEntries();
+		// (this will catch log entries from here on)
+
+		Configurator.setLevel( ControllerUtils.class, Level.DEBUG );
+		// (this will, for example, output the logfile)
+
+		if ( args != null && args.length > 0 ) {
+			// use the given args
+		} else{
+			final String nIterations = "0";
+			args = new String[]{
+//				// CLI params processed by MATSimApplication:
+//				"--" + pct + "pct",
+				"--iterations", nIterations,
+				"--output", "./output/gartenfeld_" + nIterations + "it",
+//				"--runId", "",
+//				"--emissions", DresdenUtils.FunctionalityHandling.DISABLED.name(),
+//				"--generate-dashboards=false",
+//
+//				// CLI params processed by standard MATSim:
+//				"--config:global.numberOfThreads", "4",
+//				"--config:qsim.numberOfThreads", "4",
+//				"--config:simwrapper.defaultDashboards", SimWrapperConfigGroup.Mode.disabled.name() // yyyy make enum and config option of same name
+			};
+		}
+
 		MATSimApplication.execute(GartenfeldScenario.class, args);
 	}
 
@@ -71,6 +104,9 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 //		set correct ride mode params (dependent on car), add replanning strategies for each subpop,
 //		add cfg group for bicycle module, configure emissions
 		super.prepareConfig(config);
+
+//		Activities.useRevisedScoringParamsWMorningEveningAndWOOpeningTimes( config );
+		// this is not needed since it is overwritten as a method.  I find that too indirect as a design.  kai, feb'26
 
 //		set simwrapper params in code rather than from config.xml
 		SimWrapperConfigGroup simWrapper = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
@@ -99,17 +135,14 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		config.timeAllocationMutator().setLatestActivityEndTime( "48:00:00" );
 		config.timeAllocationMutator().setAffectingDuration( false );
 		config.timeAllocationMutator().setMutateAroundInitialEndTimeOnly( false );
-		// relatively large setting since presumably we will move activities a lot
-		config.timeAllocationMutator().setMutationRange( 7200 );
+		config.timeAllocationMutator().setMutationRange( 7200 ); // relatively large setting since presumably we will move activities a lot
+		// yy replace by chained setters once available
 
 		return config;
 	}
 
 	@Override
 	protected void prepareScenario(Scenario scenario) {
-
-//		apply all changes of super class/method:
-//		add hbefa link attributes
 		super.prepareScenario(scenario);
 
 		Network network = scenario.getNetwork();
@@ -175,7 +208,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 	 */
 	@Override
 	protected void configureActivityScoringParams(Config config) {
-		Activities.addScoringParamsWithoutOpeningTimes(config, true);
+		Activities.useRevisedScoringParamsWMorningEveningAndWOOpeningTimes(config );
 	}
 
 	/**

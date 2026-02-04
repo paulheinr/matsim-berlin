@@ -1,6 +1,7 @@
 package org.matsim.run;
 
 import com.google.inject.Key;
+import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import org.jetbrains.annotations.Nullable;
 import org.matsim.analysis.QsimTimingModule;
@@ -19,7 +20,9 @@ import org.matsim.core.config.groups.ReplanningConfigGroup;
 import org.matsim.core.config.groups.VspExperimentalConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.gbl.Gbl;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
+import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule.DefaultSelector;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule.DefaultStrategy;
 import org.matsim.core.router.costcalculators.OnlyTimeDependentTravelDisutilityFactory;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
@@ -54,12 +57,11 @@ public class OpenBerlinScenario extends MATSimApplication {
 	private static final String HBEFA_FILE_COLD_AVERAGE = HBEFA_2020_PATH + "r9230ru2n209r30u2fn0c9rn20n2rujkhkjhoewt84202.enc" ;
 	private static final String HBEFA_FILE_WARM_AVERAGE = HBEFA_2020_PATH + "7eff8f308633df1b8ac4d06d05180dd0c5fdf577.enc";
 
-	@CommandLine.Mixin
-	private final SampleOptions sample = new SampleOptions(10, 25, 3, 1);
+//	@CommandLine.Mixin
+//	private final SampleOptions sample = new SampleOptions(10, 25, 3, 1);
+	// no longer allowed. kai, feb'26
 
-	@CommandLine.Option(names = "--plan-selector",
-		description = "Plan selector to use.",
-		defaultValue = DefaultPlanStrategiesModule.DefaultSelector.ChangeExpBeta)
+	@CommandLine.Option(names = "--plan-selector", description = "Plan selector to use.", defaultValue = DefaultSelector.ChangeExpBeta)
 	private String planSelector;
 
 	public OpenBerlinScenario() {
@@ -76,29 +78,36 @@ public class OpenBerlinScenario extends MATSimApplication {
 
 	@Override
 	protected Config prepareConfig(Config config) {
+		// yy consistency of scale factors is tested in config consistency. kai, feb'26
 
-		SimWrapperConfigGroup simwrapperConfig = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
+//		SimWrapperConfigGroup simwrapperConfig = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
 
-		if (sample.isSet()) {
-			double sampleSize = sample.getSample();
-
-			config.qsim().setFlowCapFactor(sampleSize);
-			config.qsim().setStorageCapFactor(sampleSize);
-
-			// Counts can be scaled with sample size
-			config.counts().setCountsScaleFactor(sampleSize);
-			simwrapperConfig.setSampleSize(sampleSize);
-
-			config.controller().setRunId(sample.adjustName(config.controller().getRunId()));
-			config.controller().setOutputDirectory(sample.adjustName(config.controller().getOutputDirectory()));
-			config.plans().setInputFile(sample.adjustName(config.plans().getInputFile()));
-		}
+//		if (sample.isSet()) {
+//			double sampleSize = sample.getSample();
+//
+//			config.qsim().setFlowCapFactor(sampleSize);
+//			config.qsim().setStorageCapFactor(sampleSize);
+//
+//			// Counts can be scaled with sample size
+//			config.counts().setCountsScaleFactor(sampleSize);
+//			simwrapperConfig.setSampleSize(sampleSize);
+//
+//			config.controller().setRunId(sample.adjustName(config.controller().getRunId()));
+//			config.controller().setOutputDirectory(sample.adjustName(config.controller().getOutputDirectory()));
+//			config.plans().setInputFile(sample.adjustName(config.plans().getInputFile()));
+//		}
+		///  There are now scale consistency checks (using the flow capacity as the reference value) in {@link org.matsim.core.config.groups.GlobalConfigGroup} and in {@link SimWrapperConfigGroup}.
+		///  We have also decided to have separate config files for separate sample sizes, since those normally also need different ASCs.
+		///  Since these are then different runs, we are also no longer re-writing file and directory names.
+		///  kai, feb'26
 
 		config.qsim().setUsingTravelTimeCheckInTeleportation(true);
 
 		// overwrite ride scoring params with values derived from car
 		RideScoringParamsFromCarParams.setRideScoringParamsBasedOnCarParams(config.scoring(), 1.0);
-//		the following needs to be in a separate class because we want to override the method in GartenfeldScenario
+
+		//		the following needs to be in a separate method because we want to override the method in GartenfeldScenario
+		// (not sure if I like this as a design.  kai, feb'25)
 		configureActivityScoringParams(config);
 
 //		add all necessary replanning strategies for all subpops
@@ -112,7 +121,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 		replanning.addStrategySettings( new StrategySettings().setStrategyName( DefaultStrategy.SubtourModeChoice ).setWeight(0.15).setSubpopulation(SUBPOP_PERSON) );
 
 		// Need to switch to warning for best score
-		if (planSelector.equals(DefaultPlanStrategiesModule.DefaultSelector.BestScore)) {
+		if (planSelector.equals( DefaultSelector.BestScore )) {
 			config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.warn);
 		}
 
@@ -142,9 +151,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 
 	@Override
 	protected void prepareScenario(Scenario scenario) {
-
-		// add hbefa link attributes.
-		OsmHbefaMapping.build().addHbefaMappings(scenario.getNetwork() );
+		OsmHbefaMapping.build().addHbefaMappings(scenario.getNetwork() ); // add hbefa link attributes
 	}
 
 	@Override
@@ -163,7 +170,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 			controler.addOverridingModule(new AbstractModule() {
 				@Override
 				public void install() {
-					bind(ScoringParametersForPerson.class).to(IncomeDependentUtilityOfMoneyPersonScoringParameters.class).asEagerSingleton();
+					bind(ScoringParametersForPerson.class).to(IncomeDependentUtilityOfMoneyPersonScoringParameters.class).in( Singleton.class );
 				}
 			});
 		}
@@ -171,7 +178,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 	}
 
 	/**
-	 * Add travel time bindings for ride and freight modes, which are not actually network modes.
+	 * Add travel time bindings for ride and freight modes.
 	 */
 	public static final class BerlinTravelTimeBinding extends AbstractModule {
 
@@ -197,6 +204,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 				bind(BicycleLinkSpeedCalculator.class).to(BicycleLinkSpeedCalculatorDefaultImpl.class);
 //				I do not know why the following binding is needed here, because BicycleParamsDefaultImpl is bound in BicycleModule, but the controller is complaining.
 //				so I added it here. -sm0226
+				// The BicycleModule is nowhere bound.  kai, feb'26
 				bind(BicycleParams.class).to(BicycleParamsDefaultImpl.class);
 
 				// Bike should use free speed travel time
