@@ -103,6 +103,7 @@ input/sumo.net.xml: input/network.osm
 	 --osm.all-attributes\
 	 --osm.extra-attributes smoothness,surface,crossing,tunnel,traffic_sign,bus:lanes,bus:lanes:forward,bus:lanes:backward,cycleway,cycleway:right,cycleway:left,bicycle\
 	 --proj "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"\
+	 --ignore-errors --ignore-errors.connections\
 	 --osm-files $< -o=$@
 
 # converting the network from SUMO format to MATSim format:
