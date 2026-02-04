@@ -21,7 +21,7 @@ sc := java -Xmx$(MEMORY) -XX:+UseParallelGC -cp $(JAR) org.matsim.prepare.RunOpe
 .DELETE_ON_ERROR:
 
 $(JAR):
-	mvn package
+	./mvnw clean package -DskipTests=true
 
 input/brandenburg.osm.pbf:
 	curl https://download.geofabrik.de/europe/germany/brandenburg-230101.osm.pbf -o $@
