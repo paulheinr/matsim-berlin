@@ -16,6 +16,7 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.algorithms.ParallelPersonAlgorithmUtils;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.MultimodalLinkChooserDefaultImpl;
+import org.matsim.run.ActivitiesRevised;
 import org.matsim.run.OpenBerlinScenario;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
 import picocli.CommandLine;
@@ -32,13 +33,17 @@ import static org.matsim.run.gartenfeld.GartenfeldUtils.prepareVehicleTypesForEm
  * See {@link org.matsim.prepare.gartenfeld.CreateGartenfeldComplete} for the creation of these input files.
  */
 public class GartenfeldScenario extends OpenBerlinScenario {
+
 	@CommandLine.Option(names = "--gartenfeld-config", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/gartenfeld-cutout-v6.4-10pct.config.xml")
-	private String gartenFeldConfig;
+	private String gartenfeldConfig;
+
 	@CommandLine.Option(names = "--gartenfeld-shp", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/shp/DNG_area.gpkg")
 	private String gartenFeldArea;
+
 	@CommandLine.Option(names = "--parking-garages", description = "Enable parking garages. Possible values CAR_PARKING_ALLOWED_ON_ALL_LINKS or CAR_PARKING_IN_CENTRAL_GARAGE",
 		defaultValue = "CAR_PARKING_ALLOWED_ON_ALL_LINKS")
 	private GarageType garageType = GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS;
+
 	@CommandLine.Option(names = "--explicit-walk-intermodality", defaultValue = "ENABLED", description = "Define if explicit walk intermodality parameter to/from pt should be set or not (use default).")
 	static GartenfeldUtils.FunctionalityHandling explicitWalkIntermodalityBaseCase;
 
@@ -54,33 +59,20 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		return explicitWalkIntermodalityBaseCase;
 	}
 
-	public static void setExplicitIntermodalityParamsForWalkToPt(SwissRailRaptorConfigGroup srrConfig) {
-		srrConfig.setUseIntermodalAccessEgress(true);
-		srrConfig.setIntermodalAccessEgressModeSelection(SwissRailRaptorConfigGroup.IntermodalAccessEgressModeSelection.CalcLeastCostModePerStop);
-
-//			add walk as access egress mode to pt
-		SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet accessEgressWalkParam = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
-		accessEgressWalkParam.setMode(TransportMode.walk);
-//			initial radius for pt stop search
-//		5k based on manual check in google maps for gartenfeld-Paulsternstr and gartenfeld-Haselhorst. 5k should be more than enough
-		accessEgressWalkParam.setInitialSearchRadius(5000);
-		accessEgressWalkParam.setMaxRadius(10000);
-//			with this, initialSearchRadius gets extended by the set value until maxRadius is reached
-		accessEgressWalkParam.setSearchExtensionRadius(1000);
-		srrConfig.addIntermodalAccessEgress(accessEgressWalkParam);
-	}
-
 	@Override
 	protected Config prepareConfig(Config config) {
 
 		// Load the Gartenfeld specific part into the standard Berlin config
-		ConfigUtils.loadConfig(config, gartenFeldConfig);
+		ConfigUtils.loadConfig(config, gartenfeldConfig);
 
 		// needs to be called after load.config
 //		apply all changes of super class/method: add simwrapper cfg, add scaling factor where applicable,
 //		set correct ride mode params (dependent on car), add replanning strategies for each subpop,
 //		add cfg group for bicycle module, configure emissions
 		super.prepareConfig(config);
+
+		// replace the activity params:
+		ActivitiesRevised.replaceActivityParams( config );
 
 //		set simwrapper params in code rather than from config.xml
 		SimWrapperConfigGroup simWrapper = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
@@ -90,6 +82,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		simWrapper.defaultParams().setMapCenter("13.39,52.51");
 		simWrapper.defaultParams().setMapZoomLevel(9.1);
 		simWrapper.defaultParams().setShp("../gartenfeld/v6.4/shp/area_utm32n.shp");
+		// yy replace by chained setters once available
 
 //		gartenfeld specific
 //		.get(context) does not only get the params, but also creates them if not present in current config. also adds them to config.
@@ -97,10 +90,17 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		gartenfeldContext.setMapCenter("13.24,52.55");
 		gartenfeldContext.setMapZoomLevel(14.2);
 		gartenfeldContext.setShp("../gartenfeld/v6.4/shp/gartenfeld_utm32n.shp");
+		// yy replace by chained setters once available
 
 		if (explicitWalkIntermodalityBaseCase == GartenfeldUtils.FunctionalityHandling.ENABLED) {
-			setExplicitIntermodalityParamsForWalkToPt(ConfigUtils.addOrGetModule(config, SwissRailRaptorConfigGroup.class));
+			GartenfeldUtils.setExplicitIntermodalityParamsForWalkToPt(ConfigUtils.addOrGetModule(config, SwissRailRaptorConfigGroup.class ) );
 		}
+
+		// I do not know what is set further upstream, but am overriding this here:
+		config.timeAllocationMutator().setLatestActivityEndTime( "48:00:00" );  // should be infinity, but that is not possible
+		config.timeAllocationMutator().setAffectingDuration( false );
+		config.timeAllocationMutator().setMutateAroundInitialEndTimeOnly( false );
+		config.timeAllocationMutator().setMutationRange( 7200 ); // relatively large setting since presumably we will move activities a lot
 
 		return config;
 	}
@@ -143,6 +143,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 					Runtime.getRuntime().availableProcessors(),
 					PersonNetworkLinkCheck.createPersonAlgorithm(network)
 			);
+			/// also see {@link org.matsim.core.scenario.ScenarioUtils.cleanScenario( ... )} and methods therin.
 		}
 
 //		add hbefa types to vehicle types

@@ -1,7 +1,5 @@
 package org.matsim.run.gartenfeld;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.population.Activity;
@@ -132,6 +130,21 @@ public final class GartenfeldUtils {
 				log.info("Activity types of last activity in plans: {}", lastActTypes);
 			}
 		}
+	public static void setExplicitIntermodalityParamsForWalkToPt( SwissRailRaptorConfigGroup srrConfig ) {
+		srrConfig.setUseIntermodalAccessEgress(true);
+		srrConfig.setIntermodalAccessEgressModeSelection(SwissRailRaptorConfigGroup.IntermodalAccessEgressModeSelection.CalcLeastCostModePerStop);
+
+//			add walk as access egress mode to pt
+		SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet accessEgressWalkParam = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
+		accessEgressWalkParam.setMode(TransportMode.walk);
+//			initial radius for pt stop search
+//		5k based on manual check in google maps for gartenfeld-Paulsternstr and gartenfeld-Haselhorst. 5k should be more than enough
+		accessEgressWalkParam.setInitialSearchRadius(5000);
+		accessEgressWalkParam.setMaxRadius(10000);
+//			with this, initialSearchRadius gets extended by the set value until maxRadius is reached
+		accessEgressWalkParam.setSearchExtensionRadius(1000);
+		srrConfig.addIntermodalAccessEgress(accessEgressWalkParam);
+	}
 	}
 
 	private static int getDurationBin(Double duration) {

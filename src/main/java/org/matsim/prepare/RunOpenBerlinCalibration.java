@@ -13,7 +13,6 @@ import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.MATSimApplication;
 import org.matsim.application.options.SampleOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
-import org.matsim.application.prepare.freight.tripExtraction.ExtractRelevantFreightTrips;
 import org.matsim.application.prepare.network.CleanNetwork;
 import org.matsim.application.prepare.network.CreateNetworkFromSumo;
 import org.matsim.application.prepare.network.params.ApplyNetworkParams;
@@ -93,7 +92,8 @@ import java.util.stream.Collectors;
 	MergePlans.class, SplitActivityTypesDuration.class, CleanPopulation.class, CleanAttributes.class,
 	GenerateSmallScaleCommercialTrafficDemand.class, CreateDataDistributionOfStructureData.class,
 	RunCountOptimization.class, SelectPlansFromIndex.class, ExtractPlanIndexFromType.class, AssignReferencePopulation.class,
-	ExtractRelevantFreightTrips.class, CheckCarAvailability.class, FixSubtourModes.class, ComputeTripChoices.class, ComputePlanChoices.class,
+//	ExtractRelevantFreightTrips.class,
+	CheckCarAvailability.class, FixSubtourModes.class, ComputeTripChoices.class, ComputePlanChoices.class,
 	ApplyNetworkParams.class, SetCarAvailabilityByAge.class, CreateDrtVehicles.class, EndlessCircleLineScheduleModifier.class
 })
 public class RunOpenBerlinCalibration extends MATSimApplication {
