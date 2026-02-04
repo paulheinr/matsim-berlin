@@ -15,6 +15,9 @@ REGIONS := brandenburg
 ## either use the global isntallation via, e.g. apt-get, or define where this is comming from
 osmosis := osmosis
 
+## you need SUMO (set $(SUMO_HOME) )to run this script in version 1.20.0 (or greater ?), either build it yourself 
+## or use https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/matsim-germany/sumo/sumo_1.20.0/
+
 # Scenario creation tool
 sc := java -Xmx$(MEMORY) -XX:+UseParallelGC -cp $(JAR) org.matsim.prepare.RunOpenBerlinCalibration
 
