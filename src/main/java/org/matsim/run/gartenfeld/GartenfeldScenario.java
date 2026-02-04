@@ -12,10 +12,12 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.algorithms.ParallelPersonAlgorithmUtils;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.MultimodalLinkChooserDefaultImpl;
+import org.matsim.run.Activities;
 import org.matsim.run.OpenBerlinScenario;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
 import picocli.CommandLine;
@@ -167,6 +169,14 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 					bind(MultimodalLinkChooser.class).toInstance(new GartenfeldLinkChooser(ShpOptions.ofLayer(gartenFeldArea, null)));
 				}
 			});
+	}
+
+	/**
+	 * overrides configureActivityScoringParams in parent class OpenBerlinScenario because here we do not want to use opening and closing times for act types.
+	 */
+	@Override
+	protected void configureActivityScoringParams(Config config) {
+		Activities.addScoringParamsWithoutOpeningTimes(config, true);
 	}
 
 	/**

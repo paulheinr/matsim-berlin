@@ -99,7 +99,8 @@ public class OpenBerlinScenario extends MATSimApplication {
 
 		// overwrite ride scoring params with values derived from car
 		RideScoringParamsFromCarParams.setRideScoringParamsBasedOnCarParams(config.scoring(), 1.0);
-		Activities.addScoringParams(config, true);
+//		the following needs to be in a separate class because we want to override the method in GartenfeldScenario
+		configureActivityScoringParams(config);
 
 //		add all necessary replanning strategies for all subpops
 		// Required for all calibration strategies
@@ -152,6 +153,13 @@ public class OpenBerlinScenario extends MATSimApplication {
 		eConfig.setEmissionsComputationMethod(EmissionsConfigGroup.EmissionsComputationMethod.StopAndGoFraction);
 
 		return config;
+	}
+
+	/**
+	 * overridable method for adding activity scoring params.
+	 */
+	protected void configureActivityScoringParams(Config config) {
+		Activities.addScoringParams(config, true);
 	}
 
 	@Override
