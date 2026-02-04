@@ -12,7 +12,8 @@ berlin := ../../../public-svn/matsim/scenarios/countries/de/berlin/berlin-$V
 MEMORY ?= 20G
 REGIONS := brandenburg
 
-osmosis := osmosis/bin/osmosis
+## either use the global isntallation via, e.g. apt-get, or define where this is comming from
+osmosis := osmosis
 
 # Scenario creation tool
 sc := java -Xmx$(MEMORY) -XX:+UseParallelGC -cp $(JAR) org.matsim.prepare.RunOpenBerlinCalibration
