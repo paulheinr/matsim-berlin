@@ -13,7 +13,6 @@ import org.matsim.contrib.bicycle.BicycleConfigGroup;
 import org.matsim.contrib.bicycle.BicycleLinkSpeedCalculator;
 import org.matsim.contrib.bicycle.BicycleLinkSpeedCalculatorDefaultImpl;
 import org.matsim.contrib.bicycle.BicycleTravelTime;
-import org.matsim.contrib.emissions.HbefaRoadTypeMapping;
 import org.matsim.contrib.emissions.OsmHbefaMapping;
 import org.matsim.contrib.emissions.utils.EmissionsConfigGroup;
 import org.matsim.contrib.vsp.scoring.RideScoringParamsFromCarParams;
@@ -140,17 +139,13 @@ public class OpenBerlinScenario extends MATSimApplication {
 	protected void prepareScenario(Scenario scenario) {
 
 		// add hbefa link attributes.
-		HbefaRoadTypeMapping roadTypeMapping = OsmHbefaMapping.build();
-		roadTypeMapping.addHbefaMappings(scenario.getNetwork());
+		OsmHbefaMapping.build().addHbefaMappings(scenario.getNetwork() );
 	}
 
 	@Override
 	protected void prepareControler(Controler controler) {
-
 		controler.addOverridingModule(new SimWrapperModule());
-
-		controler.addOverridingModule(new TravelTimeBinding());
-
+		controler.addOverridingModule(new BerlinTravelTimeBinding() );
 		controler.addOverridingModule(new QsimTimingModule());
 
 		// AdvancedScoring is specific to matsim-berlin!
@@ -173,27 +168,26 @@ public class OpenBerlinScenario extends MATSimApplication {
 	/**
 	 * Add travel time bindings for ride and freight modes, which are not actually network modes.
 	 */
-	public static final class TravelTimeBinding extends AbstractModule {
+	public static final class BerlinTravelTimeBinding extends AbstractModule {
 
 		private final boolean carOnly;
 
-		public TravelTimeBinding() {
+		public BerlinTravelTimeBinding() {
 			this.carOnly = false;
 		}
 
-		public TravelTimeBinding(boolean carOnly) {
+		public BerlinTravelTimeBinding( boolean carOnly ) {
 			this.carOnly = carOnly;
 		}
 
 		@Override
 		public void install() {
-			addTravelTimeBinding(TransportMode.ride).to(networkTravelTime());
+			addTravelTimeBinding(TransportMode.ride).to( carTravelTime() );
 			addTravelDisutilityFactoryBinding(TransportMode.ride).to(carTravelDisutilityFactoryKey());
 
 			if (!carOnly) {
 				addTravelTimeBinding("freight").to(Key.get(TravelTime.class, Names.named(TransportMode.truck)));
 				addTravelDisutilityFactoryBinding("freight").to(Key.get(TravelDisutilityFactory.class, Names.named(TransportMode.truck)));
-
 
 				bind(BicycleLinkSpeedCalculator.class).to(BicycleLinkSpeedCalculatorDefaultImpl.class);
 

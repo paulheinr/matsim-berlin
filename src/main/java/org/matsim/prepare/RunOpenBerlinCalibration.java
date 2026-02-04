@@ -470,7 +470,7 @@ public class RunOpenBerlinCalibration extends MATSimApplication {
 			}
 		});
 
-		controler.addOverridingModule(new OpenBerlinScenario.TravelTimeBinding(allCar));
+		controler.addOverridingModule(new OpenBerlinScenario.BerlinTravelTimeBinding(allCar) );
 		controler.addOverridingModule(new SimWrapperModule());
 
 		if (ConfigUtils.hasModule(controler.getConfig(), AdvancedScoringConfigGroup.class)) {
