@@ -4,15 +4,15 @@ package org.matsim.run;
 import org.matsim.application.MATSimApplication;
 
 /**
- * Run the {@link OpenBerlinScenario} with default configuration.
+ * Run the {@link OpenBerlinScenario}.
  */
-public final class RunOpenBerlinScenario {
+public final class OpenBerlinScenarioWrapper {
 
-	private RunOpenBerlinScenario() {
+	private OpenBerlinScenarioWrapper() {
 	}
 
 	public static void main(String[] args) {
-		MATSimApplication.runWithDefaults(OpenBerlinScenario.class, args);
+		MATSimApplication.run(OpenBerlinScenario.class, args);
 
 		// (I think that this will in the end just do MATSimApplication.run( OpenBerlinScenario.class, args ).  kai, aug'24)
 

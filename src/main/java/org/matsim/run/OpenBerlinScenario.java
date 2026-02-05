@@ -64,7 +64,7 @@ public class OpenBerlinScenario extends MATSimApplication {
 	}
 
 	public static void main(String[] args) {
-		MATSimApplication.run(OpenBerlinScenario.class, args);
+		MATSimApplication.execute(OpenBerlinScenario.class, args);
 	}
 
 	@Override
