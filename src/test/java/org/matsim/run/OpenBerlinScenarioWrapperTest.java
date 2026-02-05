@@ -8,7 +8,7 @@ import org.matsim.testcases.MatsimTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RunOpenBerlinScenarioTest {
+public class OpenBerlinScenarioWrapperTest {
 
 	@RegisterExtension
 	public MatsimTestUtils utils = new MatsimTestUtils();
