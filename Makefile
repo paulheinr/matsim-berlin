@@ -42,16 +42,16 @@ $(germany)/RegioStaR-Referenzdateien.xlsx:
 # (link no longer working; in general, mcloud no longer exists; RegioStar = spatial planning categories)
 
 # Preprocessing and cleaning of raw osm data to geo-referenced activity facilities.
-input/facilities.gpkg: input/brandenburg.osm.pbf
+input/facilities.gpkg: input/brandenburg.osm.pbf input/activity_mapping.json
 	$(sc) prepare facility-shp\
-	 --activity-mapping input/activity_mapping.json\
+	 --activity-mapping $(word 2,$^)\
 	 --input $<\
 	 --output $@
 
 # The reference visitations used in the covid project refer to this older osm data version.
-input/ref_facilities.gpkg: input/facilities.osm.pbf
+input/ref_facilities.gpkg: input/facilities.osm.pbf input/activity_mapping.json
 	$(sc) prepare facility-shp\
-	 --activity-mapping input/activity_mapping.json\
+	 --activity-mapping $(word 2,$^)\
 	 --input $<\
 	 --output $@
 
@@ -71,12 +71,12 @@ $(berlin)/input/shp/Planungsraum_EPSG_25833.shp:
 # (shapefiles LORs = Berlin local system of zones)
 
 # filtering for those parts of the osm data that we need for the network:
-input/network.osm: input/brandenburg.osm.pbf
+input/network.osm: input/brandenburg.osm.pbf $p/area/area.poly input/remove-railway.xml
 
 	# Detailed network includes bikes as well
 	$(osmosis) --rb file=$<\
 	 --tf accept-ways bicycle=designated highway=motorway,motorway_link,trunk,trunk_link,primary,primary_link,secondary_link,secondary,tertiary,motorway_junction,residential,living_street,unclassified,cycleway\
-	 --bounding-polygon file="$p/area/area.poly"\
+	 --bounding-polygon file="$(word 2,$^)"\
 	 --used-node --wb input/network-detailed.osm.pbf
 
 	$(osmosis) --rb file=$<\
@@ -85,7 +85,7 @@ input/network.osm: input/brandenburg.osm.pbf
 
 	$(osmosis) --rb file=input/network-coarse.osm.pbf --rb file=input/network-detailed.osm.pbf\
   	 --merge\
-  	 --tag-transform file=input/remove-railway.xml\
+  	 --tag-transform file=$(word 3,$^)\
   	 --wx $@
 
 	rm input/network-detailed.osm.pbf
@@ -95,6 +95,7 @@ input/network.osm: input/brandenburg.osm.pbf
 input/sumo.net.xml: input/network.osm
 
 	$(SUMO_HOME)/bin/netconvert --geometry.remove --ramps.guess --ramps.no-split\
+	# keep this hard-coded, because this is sumo-stuff
 	 --type-files $(SUMO_HOME)/data/typemap/osmNetconvert.typ.xml,$(SUMO_HOME)/data/typemap/osmNetconvertUrbanDe.typ.xml\
 	 --tls.guess-signals true --tls.discard-simple --tls.join --tls.default-type actuated\
 	 --junctions.join --junctions.corner-detail 5\
@@ -113,13 +114,14 @@ input/sumo.net.xml: input/network.osm
 $p/berlin-$V-network.xml.gz: input/sumo.net.xml
 	$(sc) prepare network-from-sumo $< --target-crs $(CRS) --lane-restrictions REDUCE_CAR_LANES --output $@
 
-	$(sc) prepare clean-network $@  --output $@ --modes car,bike,ride,truck --remove-turn-restrictions
+	$(sc) prepare clean-network $@ --output $@ --modes car,bike,ride,truck --remove-turn-restrictions
 
 	$(sc) prepare reproject-network\
 	 --input $@	--output $@\
 	 --input-crs $(CRS) --target-crs $(CRS)\
 	 --mode truck=freight\
 
+# where is $p/berlin-$V-network-ft.csv.gz coming from?
 	$(sc) prepare apply-network-params freespeed capacity\
  	  --network $@ --output $@\
 	  --input-features $p/berlin-$V-network-ft.csv.gz\
@@ -134,10 +136,10 @@ $p/berlin-$V-network.xml.gz: input/sumo.net.xml
 	  --decrease-only
 
 # add the PT network. Generates MATSim transit schedule as a side effect.  Note that this uses "complete-pt-2024-10-27.zip" as hardcoded input.
-$p/berlin-$V-network-with-pt.xml.gz: $p/berlin-$V-network.xml.gz $p/berlin-$V-counts-vmz.xml.gz
+$p/berlin-$V-network-with-pt.xml.gz: $p/berlin-$V-network.xml.gz $p/berlin-$V-counts-vmz.xml.gz $(germany)/gtfs/complete-pt-2024-10-27.zip
 	$(sc) prepare transit-from-gtfs --network $< --output=$p\
 	 --name berlin-$V --date "2024-11-19" --target-crs $(CRS) \
-	 $(germany)/gtfs/complete-pt-2024-10-27.zip\
+	 $(word 3,$^)\
 	 --copy-late-early\
 	 --transform-stops org.matsim.prepare.pt.CorrectStopLocations\
 	 --transform-routes org.matsim.prepare.pt.CorrectRouteTypes\
@@ -147,10 +149,10 @@ $p/berlin-$V-network-with-pt.xml.gz: $p/berlin-$V-network.xml.gz $p/berlin-$V-co
 	 --shp $p/pt-area/pt-area.shp
 
 	$(sc) prepare endless-circle-line\
- 	  --network $p/berlin-$V-network-with-pt.xml.gz\
- 	  --transit-schedule $p/berlin-$V-transitSchedule.xml.gz\
- 	  --transit-vehicles $p/berlin-$V-transitVehicles.xml.gz\
- 	  --output-transit-schedule $p/berlin-$V-transitSchedule.xml.gz\
+	  --network $p/berlin-$V-network-with-pt.xml.gz\
+	  --transit-schedule $p/berlin-$V-transitSchedule.xml.gz\
+	  --transit-vehicles $p/berlin-$V-transitVehicles.xml.gz\
+	  --output-transit-schedule $p/berlin-$V-transitSchedule.xml.gz\
 	  --output-transit-vehicles $p/berlin-$V-transitVehicles.xml.gz
 
   # Very last step depends on counts and the network to set better capacities
@@ -377,6 +379,7 @@ $p/berlin-$V.drt-by-rndLocations-10000vehicles-4seats.xml.gz: $p/berlin-$V-netwo
 
 
 prepare-calibration: $p/berlin-activities-$V-25pct.plans.xml.gz $p/berlin-$V-network-with-pt.xml.gz $p/berlin-$V-counts-vmz.xml.gz
+	-make -Bnd prepare-calibration | make2graph | dot -Tpng -o prepare-calibration_graph.png
 	echo "Done"
 
 prepare-initial: $p/berlin-$V-25pct.plans-initial.xml.gz $p/berlin-$V-network-with-pt.xml.gz
