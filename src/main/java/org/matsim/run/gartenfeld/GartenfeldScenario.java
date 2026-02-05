@@ -37,23 +37,27 @@ import static org.matsim.run.gartenfeld.GartenfeldUtils.prepareVehicleTypesForEm
  * See {@link org.matsim.prepare.gartenfeld.CreateGartenfeldComplete} for the creation of these input files.
  */
 public class GartenfeldScenario extends OpenBerlinScenario {
+	// yyyyyy This whole class was somewhat reworked in an attempt to use it out of Tramola.  However, having a configFile on
+	// top of a configFile makes things even more complicated, and so we decided to go with DresdenModel
+	// for the time being.  In consequence, this class here was left hanging in a non-useful state.  Still, I
+	// would think that we should sort out the MATSimApplication class first, and then maybe return to here.  kai, feb'26
 
 	/**
 	 * @deprecated -- ich lasse das jetzt erstmal so, aber generell finde ich config-file-on-top-of-other-config-file nicht gut.  kai, feb'26
 	 */
 	@Deprecated // ich lasse das jetzt erstmal so, aber generell finde ich config-file-on-top-of-other-config-file nicht gut.  kai, feb'26
 	@CommandLine.Option(names = "--gartenfeld-config", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/gartenfeld-cutout-v6.4-10pct.config.xml")
-	private String gartenfeldConfig;
+	private String gartenfeldConfigFilename;
 
 	@CommandLine.Option(names = "--gartenfeld-shp", description = "Path to configuration for Gartenfeld.", defaultValue = "input/gartenfeld/v6.4/shp/DNG_area.gpkg")
-	private String gartenFeldArea;
+	private String gartenfeldShpFilename;
 
 	@CommandLine.Option(names = "--parking-garages", description = "Enable parking garages. Possible values CAR_PARKING_ALLOWED_ON_ALL_LINKS or CAR_PARKING_IN_CENTRAL_GARAGE",
 		defaultValue = "CAR_PARKING_ALLOWED_ON_ALL_LINKS")
 	private GarageType garageType = GarageType.CAR_PARKING_ALLOWED_ON_ALL_LINKS;
 
-	@CommandLine.Option(names = "--explicit-walk-intermodality", defaultValue = "ENABLED", description = "Define if explicit walk intermodality parameter to/from pt should be set or not (use default).")
-	static GartenfeldUtils.FunctionalityHandling explicitWalkIntermodalityBaseCase;
+//	@CommandLine.Option(names = "--explicit-walk-intermodality", defaultValue = "ENABLED", description = "Define if explicit walk intermodality parameter to/from pt should be set or not (use default).")
+//	static GartenfeldUtils.FunctionalityHandling explicitWalkIntermodalityBaseCase;
 
 //	public GartenfeldScenario() {
 //		super(String.format("input/v%s/berlin-v%s.config.xml", VERSION, VERSION));
@@ -89,15 +93,15 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		MATSimApplication.execute(GartenfeldScenario.class, args);
 	}
 
-	static GartenfeldUtils.FunctionalityHandling getExplicitWalkIntermodalityBaseCase() {
-		return explicitWalkIntermodalityBaseCase;
-	}
+//	static GartenfeldUtils.FunctionalityHandling getExplicitWalkIntermodalityBaseCase() {
+//		return explicitWalkIntermodalityBaseCase;
+//	}
 
 	@Override
 	protected Config prepareConfig(Config config) {
 
 		// Load the Gartenfeld specific part into the standard Berlin config
-		ConfigUtils.loadConfig(config, gartenfeldConfig);
+		ConfigUtils.loadConfig(config, gartenfeldConfigFilename );
 
 		// needs to be called after load.config
 //		apply all changes of super class/method: add simwrapper cfg, add scaling factor where applicable,
@@ -126,9 +130,9 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 		gartenfeldContext.setShp("../gartenfeld/v6.4/shp/gartenfeld_utm32n.shp");
 		// yy replace by chained setters once available
 
-		if (explicitWalkIntermodalityBaseCase == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+//		if (explicitWalkIntermodalityBaseCase == GartenfeldUtils.FunctionalityHandling.ENABLED) {
 			GartenfeldUtils.setExplicitIntermodalityParamsForWalkToPt(ConfigUtils.addOrGetModule(config, SwissRailRaptorConfigGroup.class ) );
-		}
+//		}
 
 		// I do not know what is set further upstream, but am overriding this here:
 		// should be infinity, but that is not possible
@@ -198,7 +202,7 @@ public class GartenfeldScenario extends OpenBerlinScenario {
 				@Override
 				public void install() {
 					bind( MultimodalLinkChooserDefaultImpl.class );
-					bind(MultimodalLinkChooser.class).toInstance(new GartenfeldLinkChooser(ShpOptions.ofLayer(gartenFeldArea, null)));
+					bind(MultimodalLinkChooser.class).toInstance(new GartenfeldLinkChooser(ShpOptions.ofLayer( gartenfeldShpFilename, null )) );
 				}
 			});
 	}

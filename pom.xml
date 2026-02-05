@@ -7,10 +7,11 @@
 
 		<!-- PR-labelled release -->
 <!--		<version>2025.0-PR3862</version>-->
-<!--		<version>2026.0-PR4090</version>-->
+		<!--		<version>2026.0-PR4090</version>-->
+				<version>2026.0-PR4680</version>
 
 		<!--		weekly release:-->
-		<version>2026.0-2026w03</version>
+<!--		<version>2026.0-2026w03</version>-->
 
 		<!-- use ONLY for dependency sharing in the IDE: -->
 <!--		<version>2026.0-SNAPSHOT</version>-->
@@ -546,6 +547,7 @@
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
+<!--		Please do not use jitpack; it leads to non-deterministic builds (because of frequent time-outs).  kai, feb'26-->
 	</repositories>
 
 	<distributionManagement>

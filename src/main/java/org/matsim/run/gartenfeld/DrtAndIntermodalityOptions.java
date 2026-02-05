@@ -74,11 +74,11 @@ public class DrtAndIntermodalityOptions {
 	@CommandLine.Option(names = "--intermodal-shp", description = "Path to shp file for adding intermodal tags for drt to pt intermodality.", defaultValue = "../gartenfeld/v6.4/shp/intermodal-area/intermodal_area_gartenfeld_paulsternstrasse_bhf_utm32n.shp")
 	private String intermodalAreaShp;
 
-	@CommandLine.Option(names = "--intermodal", defaultValue = "ENABLED", description = "enable intermodality for DRT service")
-	private GartenfeldUtils.FunctionalityHandling intermodal;
+	@CommandLine.Option(names = "--intermodal", defaultValue = "true", description = "enable intermodality for DRT service")
+	private boolean intermodal;
 
-	@CommandLine.Option(names = "--drt-fare", defaultValue = "ENABLED", description = "enable fares for DRT service. The fare will be the same as for pt.")
-	private GartenfeldUtils.FunctionalityHandling fareHandling;
+	@CommandLine.Option(names = "--drt-fare", defaultValue = "true", description = "enable fares for DRT service. The fare will be the same as for pt.")
+	private boolean fareHandling;
 
 	/**
 	 * a helper method, which makes all necessary config changes to simulate drt.
@@ -136,13 +136,13 @@ public class DrtAndIntermodalityOptions {
 //		creates a drt staging activity and adds it to the scoring params
 		DrtConfigs.adjustMultiModeDrtConfig(multiModeDrtConfigGroup, config.scoring(), config.routing());
 
-		if (intermodal == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+		if (intermodal ) {
 			SwissRailRaptorConfigGroup srrConfig = ConfigUtils.addOrGetModule(config, SwissRailRaptorConfigGroup.class);
 
 //			we need to configure walk-pt intermodality if it has not been done in base case.
-			if (GartenfeldScenario.getExplicitWalkIntermodalityBaseCase() == GartenfeldUtils.FunctionalityHandling.DISABLED) {
+//			if (GartenfeldScenario.getExplicitWalkIntermodalityBaseCase() == GartenfeldUtils.FunctionalityHandling.DISABLED) {
 				GartenfeldUtils.setExplicitIntermodalityParamsForWalkToPt(srrConfig );
-			}
+//			}
 //			add drt as access egress mode for pt
 			SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet accessEgressDrtParam = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
 			accessEgressDrtParam.setMode(TransportMode.drt);
@@ -220,7 +220,7 @@ public class DrtAndIntermodalityOptions {
 		}
 
 		//			tag intermodal pt stops for intermodality between pt and drt
-		if (intermodal == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+		if (intermodal ) {
 			PrepareTransitSchedule.tagIntermodalStops(scenario.getTransitSchedule(), new ShpOptions(IOUtils.extendUrl(scenario.getConfig().getContext(), intermodalAreaShp).toString(), null, null));
 		}
 	}
@@ -228,14 +228,14 @@ public class DrtAndIntermodalityOptions {
 	/**
 	 * Helper method to add drt mode params based on pt mode params.
 	 */
-	public void addDrtModeParamsBasedOnPtModeParams(ScoringConfigGroup scoringConfigGroup, GartenfeldUtils.FunctionalityHandling fareHandling) {
+	public void addDrtModeParamsBasedOnPtModeParams(ScoringConfigGroup scoringConfigGroup, boolean fareHandling) {
 //		ASC drt = ASC pt as discussed in PHD seminar24
 //		in this scenario pt pricing is done via daily monetary constant. see berlin 6.4 config
 		scoringConfigGroup.addModeParams(new ScoringConfigGroup.ModeParams(TransportMode.drt)
 			.setConstant(scoringConfigGroup.getModes().get(TransportMode.pt).getConstant())
 			.setMarginalUtilityOfTraveling(-0.));
 
-		if (fareHandling == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+		if (fareHandling ) {
 //			if we charge (pt/drt) fare via daily constant, we should always set daily constant for drt=0.
 //			drt is only access/egress to/from Paulsternstr. Hence, the fare is already paid with the daily constant of pt.
 			scoringConfigGroup.getModes().get(TransportMode.drt).setDailyMonetaryConstant(0.);
@@ -339,7 +339,7 @@ public class DrtAndIntermodalityOptions {
 	/**
 	 * get drt fare handling parameter.
 	 */
-	public GartenfeldUtils.FunctionalityHandling getFareHandling() {
+	public boolean getFareHandling() {
 		return fareHandling;
 	}
 }

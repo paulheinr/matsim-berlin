@@ -182,11 +182,11 @@ public final class GartenfeldUtils {
 		return durationCategoryNr * 600;
 	}
 
-	/**
-	 * Helper enum to enable/disable functionalities.
-	 *
-	 * @deprecated -- this re-writes a Boolean as an enum and as such makes matters worse, not better.
-	 */
-	@Deprecated
-	enum FunctionalityHandling {ENABLED, DISABLED}
+//	/**
+//	 * Helper enum to enable/disable functionalities.
+//	 *
+//	 * @deprecated -- this re-writes a Boolean as an enum and as such makes matters worse, not better.
+//	 */
+//	@Deprecated
+//	enum FunctionalityHandling {ENABLED, DISABLED}
 }

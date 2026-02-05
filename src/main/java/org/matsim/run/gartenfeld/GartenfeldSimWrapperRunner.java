@@ -61,12 +61,12 @@ public final class GartenfeldSimWrapperRunner implements MATSimAppCommand {
 	private List<Path> inputPaths;
 	@CommandLine.Mixin
 	private final ShpOptions shp = new ShpOptions();
-	@CommandLine.Option(names = "--noise", defaultValue = "DISABLED", description = "create noise dashboard")
-	private GartenfeldUtils.FunctionalityHandling noise;
-	@CommandLine.Option(names = "--trips", defaultValue = "DISABLED", description = "create trips dashboard")
-	private GartenfeldUtils.FunctionalityHandling trips;
-	@CommandLine.Option(names = "--emissions", defaultValue = "DISABLED", description = "create emission dashboard")
-	private GartenfeldUtils.FunctionalityHandling emissions;
+	@CommandLine.Option(names = "--noise", defaultValue = "false", description = "create noise dashboard")
+	private boolean noise;
+	@CommandLine.Option(names = "--trips", defaultValue = "false", description = "create trips dashboard")
+	private boolean trips;
+	@CommandLine.Option(names = "--emissions", defaultValue = "false", description = "create emission dashboard")
+	private boolean emissions;
 
 
 	private GartenfeldSimWrapperRunner(){
@@ -79,7 +79,7 @@ public final class GartenfeldSimWrapperRunner implements MATSimAppCommand {
 	@Override
 	public Integer call() throws Exception {
 
-		if (noise == GartenfeldUtils.FunctionalityHandling.DISABLED && trips == GartenfeldUtils.FunctionalityHandling.DISABLED && emissions == GartenfeldUtils.FunctionalityHandling.DISABLED){
+		if ( !noise  && !trips  && !emissions ){
 			throw new IllegalArgumentException("you have not configured any dashboard to be created! Please use command line parameters!");
 		}
 
@@ -99,11 +99,11 @@ public final class GartenfeldSimWrapperRunner implements MATSimAppCommand {
 
 			//add dashboards according to command line parameters
 //			if more dashboards are to be added here, we need to check if noise==true before adding noise dashboard here
-			if (noise == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+			if (noise ) {
 				sw.addDashboard(Dashboard.customize(new NoiseDashboard(config.global().getCoordinateSystem())).context("noise"));
 			}
 
-			if (trips == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+			if (trips ) {
 				sw.addDashboard(Dashboard.customize(new TripDashboard(
 					"mode_share_ref.csv",
 					"mode_share_per_dist_ref.csv",
@@ -113,7 +113,7 @@ public final class GartenfeldSimWrapperRunner implements MATSimAppCommand {
 					.setAnalysisArgs("--person-filter", "subpopulation=person")).context("calibration").title("Trips (calibration)"));
 			}
 
-			if (emissions == GartenfeldUtils.FunctionalityHandling.ENABLED) {
+			if (emissions ) {
 				sw.addDashboard(Dashboard.customize(new EmissionsDashboard(config.global().getCoordinateSystem())).context("emissions"));
 
 //				setEmissionsConfigs(config);
