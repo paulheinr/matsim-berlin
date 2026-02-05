@@ -6,7 +6,7 @@ CRS := EPSG:25832
 
 p := input/$V
 germany := ../../../shared-svn/projects/matsim-germany
-berlinShared := ../../../shared-svn/projects/matsim-berlin/data
+berlinShared := ../../../shared-svn/projects/matsim-berlin
 berlin := ../../../public-svn/matsim/scenarios/countries/de/berlin/berlin-$V
 
 MEMORY ?= 20G
@@ -55,7 +55,7 @@ input/ref_facilities.gpkg: input/facilities.osm.pbf
 	 --input $<\
 	 --output $@
 
-$(berlinShared)/statistik-berlin-brandenburg/PLR_2013_2020.csv:
+$(berlinShared)/data/statistik-berlin-brandenburg/PLR_2013_2020.csv:
 	#curl https://instantatlas.statistik-berlin-brandenburg.de/instantatlas/interaktivekarten/kommunalatlas/Kommunalatlas.zip --insecure -o atlas.zip
 	#unzip atlas.zip -d input
 	#rm atlas.zip
@@ -163,7 +163,7 @@ $p/berlin-$V-network-with-pt.xml.gz: $p/berlin-$V-network.xml.gz $p/berlin-$V-co
 # register the VMZ counts (from 2018; see filename below) onto the network:
 $p/berlin-$V-counts-vmz.xml.gz: $p/berlin-$V-network.xml.gz
 	$(sc) prepare counts-from-vmz\
-	 --excel ../shared-svn/projects/matsim-berlin/berlin-v5.5/original_data/vmz_counts_2018/Datenexport_2018_TU_Berlin.xlsx\
+	 --excel $(berlinShared)/berlin-v5.5/original_data/vmz_counts_2018/Datenexport_2018_TU_Berlin.xlsx\
 	 --network $<\
 	 --network-geometries $p/berlin-$V-network-linkGeometries.csv\
 	 --output $@\
@@ -178,7 +178,7 @@ $p/berlin-$V-facilities.xml.gz: $p/berlin-$V-network.xml.gz input/facilities.gpk
 	 --zones-shp $(word 3,$^)\
 	 --output $@
 
-$p/berlin-only-$V-100pct.plans.xml.gz: $(berlinShared)/statistik-berlin-brandenburg/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
+$p/berlin-only-$V-100pct.plans.xml.gz: $(berlinShared)/data/statistik-berlin-brandenburg/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
 	$(sc) prepare berlin-population\
 		--input $<\
 		--sample 1.0\
@@ -186,7 +186,7 @@ $p/berlin-only-$V-100pct.plans.xml.gz: $(berlinShared)/statistik-berlin-brandenb
 		--facilities $(word 3,$^) --facilities-attr resident\
 		--output $@
 
-$p/berlin-only-$V-25pct.plans.xml.gz: $(berlinShared)/statistik-berlin-brandenburg/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
+$p/berlin-only-$V-25pct.plans.xml.gz: $(berlinShared)/data/statistik-berlin-brandenburg/PLR_2013_2020.csv $(berlin)/input/shp/Planungsraum_EPSG_25833.shp input/facilities.gpkg
 	$(sc) prepare berlin-population\
 		--input $<\
 		--shp $(word 2,$^) --shp-crs EPSG:25833\
@@ -210,12 +210,12 @@ $p/berlin-static-$V-25pct.plans.xml.gz: $p/berlin-only-$V-25pct.plans.xml.gz $p/
 # (merges the two population, and joins spatial category into each person)
 
 $p/berlin-activities-$V-25pct.plans.xml.gz: $p/berlin-static-$V-25pct.plans.xml.gz $p/berlin-$V-facilities.xml.gz $p/berlin-$V-network.xml.gz
-	$(sc) prepare activity-sampling --seed 1 --input $< --output $@ --persons $(berlinShared)/SrV/2018/converted/table-persons.csv --activities $(berlinShared)/SrV/2018/converted/table-activities.csv
+	$(sc) prepare activity-sampling --seed 1 --input $< --output $@ --persons $(berlinShared)/data/SrV/2018/converted/table-persons.csv --activities $(berlinShared)/data/SrV/2018/converted/table-activities.csv
 
 	$(sc) prepare assign-reference-population --population $@ --output $@\
-	 --persons $(berlinShared)/SrV/2018/converted/table-persons.csv\
-  	 --activities $(berlinShared)/SrV/2018/converted/table-activities.csv\
-  	 --shp $(berlinShared)/SrV/2018/zones/zones.shp\
+	 --persons $(berlinShared)/data/SrV/2018/converted/table-persons.csv\
+  	 --activities $(berlinShared)/data/SrV/2018/converted/table-activities.csv\
+  	 --shp $(berlinShared)/data/SrV/2018/zones/zones.shp\
   	 --shp-crs $(CRS)\
 	 --facilities $(word 2,$^)\
 	 --network $(word 3,$^)\
