@@ -215,7 +215,7 @@ $p/berlin-activities-$V-25pct.plans.xml.gz: $p/berlin-static-$V-25pct.plans.xml.
 	$(sc) prepare assign-reference-population --population $@ --output $@\
 	 --persons $(berlinShared)/SrV/2018/converted/table-persons.csv\
   	 --activities $(berlinShared)/SrV/2018/converted/table-activities.csv\
-  	 --shp $(germany)/../matsim-berlin/data/SrV/zones/zones.shp\
+  	 --shp $(berlinShared)/SrV/2018/zones/zones.shp\
   	 --shp-crs $(CRS)\
 	 --facilities $(word 2,$^)\
 	 --network $(word 3,$^)\
