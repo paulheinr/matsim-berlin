@@ -1,6 +1,7 @@
 package org.matsim.run.policies;
 
 import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
+import ch.sbb.matsim.routing.pt.raptor.RaptorIntermodalAccessEgress;
 import com.google.inject.Inject;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -25,9 +26,11 @@ import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.events.AfterMobsimEvent;
 import org.matsim.core.controler.listener.AfterMobsimListener;
 import org.matsim.core.population.PersonUtils;
+import org.matsim.core.router.AnalysisMainModeIdentifier;
+import org.matsim.core.router.MainModeIdentifier;
+import org.matsim.extensions.pt.routing.EnhancedRaptorIntermodalAccessEgress;
 import org.matsim.run.OpenBerlinDrtScenario;
 import org.matsim.run.OpenBerlinScenario;
-import org.matsim.simwrapper.SimWrapperConfigGroup;
 import picocli.CommandLine;
 
 import javax.annotation.Nullable;
@@ -184,7 +187,9 @@ public class OpenBerlinSharingScenario extends OpenBerlinScenario {
 			public void install() {
 				addEventHandlerBinding().toInstance(refundHandler);
 				addControlerListenerBinding().toInstance(refundHandler);
-//				TODO: bind analysismainmodeidentifier and mainmodeidentifier
+				bind(AnalysisMainModeIdentifier.class).to(MobilityToGridScenariosUtils.OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier.class);
+				bind(MainModeIdentifier.class).to(MobilityToGridScenariosUtils.OpenBerlinIntermodalPtSharingRouterModeIdentifier.class);
+				bind(RaptorIntermodalAccessEgress.class).to(EnhancedRaptorIntermodalAccessEgress.class);
 			}
 		});
 	}
@@ -194,7 +199,7 @@ public class OpenBerlinSharingScenario extends OpenBerlinScenario {
 	 */
 	private enum EScooterIntermodalityHandling {INTERMODAL_E_SCOOTER_ONLY, E_SCOOTER_REGULAR_AND_INTERMODAL}
 
-	private final class SharingRefundHandler implements PersonDepartureEventHandler, PersonMoneyEventHandler, AfterMobsimListener {
+	private static final class SharingRefundHandler implements PersonDepartureEventHandler, PersonMoneyEventHandler, AfterMobsimListener {
 		@Inject
 		private EventsManager events;
 		@Inject

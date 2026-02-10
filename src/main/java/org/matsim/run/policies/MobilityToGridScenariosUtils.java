@@ -90,23 +90,27 @@ public final class MobilityToGridScenariosUtils {
 		log.info("Transformed {} working berlin residents to home office workers.", personsToAdapt.size());
 	}
 
-	public final class OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier implements AnalysisMainModeIdentifier {
+	/**
+	 * This is an adapted version of class OpenBerlinIntermodalPtDrtRouterAnalysisModeIdentifier for sharing modes.
+	 */
+	static final class OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier implements AnalysisMainModeIdentifier {
 		public static final String ANALYSIS_MAIN_MODE_PT_WITH_SHARING_USED_FOR_ACCESS_OR_EGRESS = "pt_w_sharing_used";
 		private static final Logger log = LogManager.getLogger(OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier.class);
 		private final List<String> modeHierarchy = new ArrayList<>() ;
 		private final List<String> sharingModes;
 
 		@Inject
-		public OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier() {
+		OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier() {
 			sharingModes = Arrays.asList(OpenBerlinSharingScenario.E_SCOOTER);
 
 			modeHierarchy.add( TransportMode.walk ) ;
-			modeHierarchy.add( TransportMode.bike ); // TransportMode.bike is not registered as main mode, only "bicycle" ;
+			// TransportMode.bike is not registered as main mode, only "bicycle" ;
+			modeHierarchy.add( TransportMode.bike );
 			modeHierarchy.add( TransportMode.ride ) ;
 			modeHierarchy.add( TransportMode.car ) ;
 			modeHierarchy.add( "car2" ) ;
-			for (String drtMode: sharingModes) {
-				modeHierarchy.add( drtMode ) ;
+			for (String sharingMode: sharingModes) {
+				modeHierarchy.add( sharingMode ) ;
 			}
 			modeHierarchy.add( TransportMode.pt ) ;
 			modeHierarchy.add( "freight" );
@@ -124,8 +128,7 @@ public final class MobilityToGridScenariosUtils {
 			for ( PlanElement pe : planElements ) {
 				int index;
 				String mode;
-				if ( pe instanceof Leg) {
-					Leg leg = (Leg) pe ;
+				if ( pe instanceof Leg leg) {
 					mode = leg.getMode();
 				} else {
 					continue;
@@ -137,14 +140,16 @@ public final class MobilityToGridScenariosUtils {
 				modesFound.add(mode);
 				index = modeHierarchy.indexOf( mode ) ;
 				if ( index < 0 ) {
-					throw new RuntimeException("unknown mode=" + mode ) ;
+					log.error("unknown mode={}", mode );
+					throw new IllegalStateException("") ;
 				}
 				if ( index > mainModeIndex ) {
 					mainModeIndex = index ;
 				}
 			}
 			if (mainModeIndex == -1) {
-				throw new RuntimeException("no main mode found for trip " + planElements.toString() ) ;
+				log.error("no main mode found for trip {}", planElements);
+				throw new IllegalStateException("") ;
 			}
 
 			String mainMode = modeHierarchy.get( mainModeIndex ) ;
@@ -159,8 +164,8 @@ public final class MobilityToGridScenariosUtils {
 					} else if (sharingModes.contains(modeFound)) {
 						isSharingPt = true;
 					} else {
-						log.error("unknown intermodal pt trip: " + planElements.toString());
-						throw new RuntimeException("unknown intermodal pt trip");
+						log.error("unknown intermodal pt trip: {}", planElements);
+						throw new IllegalStateException("unknown intermodal pt trip");
 					}
 				}
 
@@ -173,6 +178,67 @@ public final class MobilityToGridScenariosUtils {
 			} else {
 				return mainMode;
 			}
+		}
+	}
+
+	/**
+	 * This is an adapted version of class OpenBerlinIntermodalPtDrtRouterModeIdentifier for sharing modes.
+	 * I do not understand why this class is necessary as -- except some small differences -- is the same as OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier.
+	 * For OpenBerlinDrtScenario such a system of 2 classes seems to be necessary, so we will use it for sharing as well. -sm0226
+	 */
+	static final class OpenBerlinIntermodalPtSharingRouterModeIdentifier implements AnalysisMainModeIdentifier {
+		private final List<String> modeHierarchy = new ArrayList<>() ;
+		private final List<String> sharingModes;
+
+		@Inject
+		OpenBerlinIntermodalPtSharingRouterModeIdentifier() {
+			sharingModes = Arrays.asList(OpenBerlinSharingScenario.E_SCOOTER);
+
+			modeHierarchy.add( TransportMode.walk ) ;
+			modeHierarchy.add( TransportMode.bike );
+			modeHierarchy.add( TransportMode.ride ) ;
+			modeHierarchy.add( TransportMode.car ) ;
+			modeHierarchy.add( "car2" ) ;
+			for (String sharingMode: sharingModes) {
+				modeHierarchy.add( sharingMode ) ;
+			}
+			modeHierarchy.add( TransportMode.pt ) ;
+			modeHierarchy.add( "freight" );
+
+			// NOTE: This hierarchical stuff is not so great: is park-n-ride a car trip or a pt trip?  Could weigh it by distance, or by time spent
+			// in respective mode.  Or have combined modes as separate modes.  In any case, can't do it at the leg level, since it does not
+			// make sense to have the system calibrate towards something where we have counted the car and the pt part of a multimodal
+			// trip as two separate trips. kai, sep'16
+		}
+
+		@Override public String identifyMainMode( List<? extends PlanElement> planElements ) {
+			int mainModeIndex = -1 ;
+			for ( PlanElement pe : planElements ) {
+				int index;
+				String mode;
+				if ( pe instanceof Leg leg ) {
+					mode = leg.getMode();
+				} else {
+					continue;
+				}
+				if (mode.equals(TransportMode.non_network_walk)) {
+					// skip, this is only a helper mode in case walk is routed on the network
+					continue;
+				}
+				index = modeHierarchy.indexOf( mode ) ;
+				if ( index < 0 ) {
+					log.error("unknown mode={}", mode);
+					throw new IllegalStateException("") ;
+				}
+				if ( index > mainModeIndex ) {
+					mainModeIndex = index ;
+				}
+			}
+			if (mainModeIndex == -1) {
+				log.error("no main mode found for trip {}", planElements);
+				throw new IllegalStateException("") ;
+			}
+			return modeHierarchy.get( mainModeIndex ) ;
 		}
 	}
 }
