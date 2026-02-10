@@ -1,14 +1,15 @@
 package org.matsim.run.policies;
 
+import com.google.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.population.Activity;
-import org.matsim.api.core.v01.population.Person;
-import org.matsim.api.core.v01.population.Plan;
+import org.matsim.api.core.v01.TransportMode;
+import org.matsim.api.core.v01.population.*;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.core.router.AnalysisMainModeIdentifier;
 import org.matsim.core.router.TripStructureUtils;
 
 import java.util.*;
@@ -87,5 +88,91 @@ public final class MobilityToGridScenariosUtils {
 			});
 
 		log.info("Transformed {} working berlin residents to home office workers.", personsToAdapt.size());
+	}
+
+	public final class OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier implements AnalysisMainModeIdentifier {
+		public static final String ANALYSIS_MAIN_MODE_PT_WITH_SHARING_USED_FOR_ACCESS_OR_EGRESS = "pt_w_sharing_used";
+		private static final Logger log = LogManager.getLogger(OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier.class);
+		private final List<String> modeHierarchy = new ArrayList<>() ;
+		private final List<String> sharingModes;
+
+		@Inject
+		public OpenBerlinIntermodalPtSharingRouterAnalysisModeIdentifier() {
+			sharingModes = Arrays.asList(OpenBerlinSharingScenario.E_SCOOTER);
+
+			modeHierarchy.add( TransportMode.walk ) ;
+			modeHierarchy.add( TransportMode.bike ); // TransportMode.bike is not registered as main mode, only "bicycle" ;
+			modeHierarchy.add( TransportMode.ride ) ;
+			modeHierarchy.add( TransportMode.car ) ;
+			modeHierarchy.add( "car2" ) ;
+			for (String drtMode: sharingModes) {
+				modeHierarchy.add( drtMode ) ;
+			}
+			modeHierarchy.add( TransportMode.pt ) ;
+			modeHierarchy.add( "freight" );
+			modeHierarchy.add( "truck" );
+
+			// NOTE: This hierarchical stuff is not so great: is park-n-ride a car trip or a pt trip?  Could weigh it by distance, or by time spent
+			// in respective mode.  Or have combined modes as separate modes.  In any case, can't do it at the leg level, since it does not
+			// make sense to have the system calibrate towards something where we have counted the car and the pt part of a multimodal
+			// trip as two separate trips. kai, sep'16
+		}
+
+		@Override public String identifyMainMode( List<? extends PlanElement> planElements ) {
+			int mainModeIndex = -1 ;
+			List<String> modesFound = new ArrayList<>();
+			for ( PlanElement pe : planElements ) {
+				int index;
+				String mode;
+				if ( pe instanceof Leg) {
+					Leg leg = (Leg) pe ;
+					mode = leg.getMode();
+				} else {
+					continue;
+				}
+				if (mode.equals(TransportMode.non_network_walk)) {
+					// skip, this is only a helper mode in case walk is routed on the network
+					continue;
+				}
+				modesFound.add(mode);
+				index = modeHierarchy.indexOf( mode ) ;
+				if ( index < 0 ) {
+					throw new RuntimeException("unknown mode=" + mode ) ;
+				}
+				if ( index > mainModeIndex ) {
+					mainModeIndex = index ;
+				}
+			}
+			if (mainModeIndex == -1) {
+				throw new RuntimeException("no main mode found for trip " + planElements.toString() ) ;
+			}
+
+			String mainMode = modeHierarchy.get( mainModeIndex ) ;
+			// differentiate pt monomodal/intermodal
+			if (mainMode.equals(TransportMode.pt)) {
+				boolean isSharingPt = false;
+				for (String modeFound: modesFound) {
+					if (modeFound.equals(TransportMode.pt)) {
+						continue;
+					} else if (modeFound.equals(TransportMode.walk)) {
+						continue;
+					} else if (sharingModes.contains(modeFound)) {
+						isSharingPt = true;
+					} else {
+						log.error("unknown intermodal pt trip: " + planElements.toString());
+						throw new RuntimeException("unknown intermodal pt trip");
+					}
+				}
+
+				if (isSharingPt) {
+					return ANALYSIS_MAIN_MODE_PT_WITH_SHARING_USED_FOR_ACCESS_OR_EGRESS;
+				} else {
+					return TransportMode.pt;
+				}
+
+			} else {
+				return mainMode;
+			}
+		}
 	}
 }

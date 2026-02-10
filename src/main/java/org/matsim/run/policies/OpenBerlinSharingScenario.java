@@ -27,6 +27,7 @@ import org.matsim.core.controler.listener.AfterMobsimListener;
 import org.matsim.core.population.PersonUtils;
 import org.matsim.run.OpenBerlinDrtScenario;
 import org.matsim.run.OpenBerlinScenario;
+import org.matsim.simwrapper.SimWrapperConfigGroup;
 import picocli.CommandLine;
 
 import javax.annotation.Nullable;
@@ -38,7 +39,7 @@ import java.util.*;
  * All necessary configs will be made in this class.
  */
 public class OpenBerlinSharingScenario extends OpenBerlinScenario {
-	private static final String E_SCOOTER = "eScooter";
+	static final String E_SCOOTER = "eScooter";
 	private static final String STOP_FILTER = "eScooterStopFilter";
 	private static final String STOP_FILTER_VALUE = "station_S/U/RE/RB_eScooter";
 	private static final String BERLIN_SHP_STRING = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v6.4/input/shp/Berlin_25832.shp";
@@ -95,7 +96,10 @@ public class OpenBerlinSharingScenario extends OpenBerlinScenario {
 		if (intermodal == EScooterIntermodalityHandling.E_SCOOTER_REGULAR_AND_INTERMODAL) {
 			// Add the shared mode to mode choice
 			List<String> modes = new ArrayList<>(Arrays.asList(config.subtourModeChoice().getModes()));
-			modes.add(E_SCOOTER);
+//			here we need to use geServiceMode(), because this builds a string prexix_serviceId and adds it to SMC in a subsequent step.
+//			if we just add E_SCOOTER, agents will be able to use eScooter as a separate mode without sharing!!!
+//			I do not like this, but for this matsim version we have to accept it. -sm0226
+			modes.add(SharingUtils.getServiceMode(serviceConfig));
 			config.subtourModeChoice().setModes(modes.toArray(new String[0]));
 		}
 
@@ -180,13 +184,9 @@ public class OpenBerlinSharingScenario extends OpenBerlinScenario {
 			public void install() {
 				addEventHandlerBinding().toInstance(refundHandler);
 				addControlerListenerBinding().toInstance(refundHandler);
+//				TODO: bind analysismainmodeidentifier and mainmodeidentifier
 			}
 		});
-
-//		TODO: test if the sim works without adding a TeleportationRoutingModule for eScooter. If not, add it here.
-//		TODO: test with mini population, 2 it and look at output.
-//		output shoul have: correct configs, output_service?!, correct refund for some eScooter users
-//		mb also go into debugger mode with below SharingRefundHadnler
 	}
 
 	/**
@@ -243,6 +243,12 @@ public class OpenBerlinSharingScenario extends OpenBerlinScenario {
 						entry.getKey().toString(), null));
 				}
 			}
+		}
+
+		@Override
+		public void reset(int iteration) {
+			ptUsers.clear();
+			eScooterFaresPerPerson.clear();
 		}
 	}
 }
