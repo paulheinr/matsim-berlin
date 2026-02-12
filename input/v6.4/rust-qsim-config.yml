@@ -1,0 +1,41 @@
+modules:
+  network:
+    type: Network
+    path: /Users/paulh/git/matsim-berlin-ph/output/1pct-no-pt/berlin-v6.4.output_network.xml.gz
+  population:
+    type: Population
+    path: /Users/paulh/git/matsim-berlin-ph/output/1pct-no-pt/berlin-v6.4.output_plans.xml.gz
+  vehicles:
+    type: Vehicles
+    path: /Users/paulh/git/matsim-berlin-ph/output/1pct-no-pt/berlin-v6.4.output_vehicles.xml.gz
+  partitioning:
+    type: Partitioning
+    num_parts: 1
+    method: !None
+#      vertex_weight:
+#        - InLinkCount
+#      imbalance_factor: 1.1
+#      edge_weight: Capacity
+  output:
+    type: Output
+    output_dir: /Users/paulh/git/matsim-berlin-ph/output/1pct-no-pt-rust
+    write_events: XmlGz
+    logging: Info
+#    profiling: !Parquet
+#      level: TRACE
+  routing:
+    type: Routing
+    mode: UsePlans
+  simulation:
+    type: Simulation
+    start_time: 0
+    end_time: 129600
+    sample_size: 0.01
+    stuck_threshold: 30
+    main_modes:
+      - car
+      - freight
+      - truck
+  computational_setup:
+    type: ComputationalSetup
+    global_sync: false
